@@ -1,0 +1,94 @@
+<%- include('../../partials/head', { title: 'My Profile' }) %>
+
+<% var saved = query.saved, pw = query.password, tfaOn = query['2fa'] === 'on', tfaOff = query['2fa'] === 'off'; %>
+<% if (saved) { %><div class="alert alert-success">Profile updated successfully.</div><% } %>
+<% if (pw) { %><div class="alert alert-success">Password changed successfully.</div><% } %>
+<% if (tfaOn) { %><div class="alert alert-success">Two-factor authentication enabled.</div><% } %>
+<% if (tfaOff) { %><div class="alert alert-info">Two-factor authentication disabled.</div><% } %>
+<% if (query.error === 'current') { %><div class="alert alert-error">Current password is incorrect.</div><% } %>
+<% if (query.error === 'short') { %><div class="alert alert-error">New password must be at least 6 characters.</div><% } %>
+<% if (query.error === 'match') { %><div class="alert alert-error">Passwords do not match.</div><% } %>
+<% if (query.error === '2fa-code' || query.error === '2fa-invalid') { %><div class="alert alert-error">Invalid 2FA verification code.</div><% } %>
+
+<div class="row">
+  <div class="col-4 col-md-12">
+    <div class="card profile-card">
+      <div class="profile-top">
+        <img class="avatar xl" src="<%= user.profile_pic || '/img/avatar.svg' %>" alt="">
+        <h3><%= user.username %></h3>
+        <p><%= user.email %></p>
+        <span class="badge <%= user.role === 'admin' ? 'gold' : '' %>"><%= user.role %></span>
+        <span class="badge <%= user.status === 'active' ? 'green' : 'red' %>"><%= user.status %></span>
+      </div>
+      <div class="profile-stats">
+        <div><b><%= user.two_factor_enabled ? 'On' : 'Off' %></b><span>2FA</span></div>
+        <div><b>#<%= user.id %></b><span>User ID</span></div>
+        <div><b><%= user.created_at.slice(0, 10) %></b><span>Joined</span></div>
+      </div>
+      <div class="card-body">
+        <p class="bio-text"><%= user.bio || 'No bio yet.' %></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-8 col-md-12">
+    <div class="card">
+      <div class="card-head"><h2><svg class="ic"><use href="#i-pencil"/></svg> Edit Profile</h2></div>
+      <div class="card-body">
+        <form method="POST" action="/profile" enctype="multipart/form-data" class="form">
+          <input type="hidden" name="existing_pic" value="<%= user.profile_pic %>">
+          <div class="row">
+            <div class="col-6 col-sm-12">
+              <div class="field"><label>Profile Picture</label><input type="file" name="profile_pic" accept="image/*"></div>
+            </div>
+            <div class="col-6 col-sm-12">
+              <div class="field"><label>Bio</label>
+                <textarea name="bio" rows="4" placeholder="Tell us about yourself"><%= user.bio || '' %></textarea>
+              </div>
+            </div>
+          </div>
+          <button class="btn btn-accent" type="submit">Save Profile</button>
+        </form>
+      </div>
+    </div>
+
+    <% if (user.is_demo) { %>
+    <div class="card">
+      <div class="card-body">
+        <div class="alert alert-info"><svg class="ic"><use href="#i-shield"/></svg> This is the <b>demo account</b>. Password is locked and cannot be changed.</div>
+      </div>
+    </div>
+    <% } else { %>
+    <div class="card">
+      <div class="card-head"><h2><svg class="ic"><use href="#i-shield"/></svg> Change Password</h2></div>
+      <div class="card-body">
+        <form method="POST" action="/profile/password" class="form">
+          <div class="row">
+            <div class="col-4 col-sm-12"><div class="field"><label>Current Password</label><input type="password" name="current" required></div></div>
+            <div class="col-4 col-sm-12"><div class="field"><label>New Password</label><input type="password" name="password" required></div></div>
+            <div class="col-4 col-sm-12"><div class="field"><label>Confirm</label><input type="password" name="confirm" required></div></div>
+          </div>
+          <button class="btn btn-accent" type="submit">Update Password</button>
+        </form>
+      </div>
+    </div>
+    <% } %>
+
+    <div class="card">
+      <div class="card-head"><h2><svg class="ic"><use href="#i-lock"/></svg> Two-Factor Authentication</h2></div>
+      <div class="card-body">
+        <% if (user.two_factor_enabled) { %>
+          <p>2FA is <b class="green-text">enabled</b> on your account.</p>
+          <form method="POST" action="/profile/2fa/disable" class="inline" data-confirm="Disable 2FA?">
+            <button class="btn btn-danger">Disable 2FA</button>
+          </form>
+        <% } else { %>
+          <p>Add an extra layer of security to your account with an authenticator app (Google Authenticator, Authy, etc).</p>
+          <a class="btn btn-accent" href="/profile/2fa/setup">Setup 2FA</a>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../../partials/footer') %>

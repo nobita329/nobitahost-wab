@@ -1,0 +1,33 @@
+<%- include('../../partials/head', { title: 'Command' }) %>
+
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-head"><h2><svg class="ic"><use href="#i-terminal"/></svg> Command Center</h2></div>
+      <div class="card-body content-area"><%- page.content %></div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-head"><h2><svg class="ic"><use href="#i-file"/></svg> Quick Terminal</h2></div>
+      <div class="card-body">
+        <div class="terminal">
+          <div class="term-bar"><span></span><span></span><span></span><b>nobita@host:~</b></div>
+          <div class="term-body" id="termBody">
+            <p><span class="t-prompt">nobita@host:~$</span> <span id="termInput"></span><span class="t-cursor">▍</span></p>
+            <p class="t-out" id="termOut">Type a command below and press run.</p>
+          </div>
+          <div class="term-actions">
+            <input id="termCmd" placeholder="e.g. npm run build" autocomplete="off">
+            <button class="btn btn-accent btn-sm" id="termRun">Run</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../../partials/footer') %>

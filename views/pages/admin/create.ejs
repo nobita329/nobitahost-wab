@@ -1,0 +1,31 @@
+<%- include('../../partials/head', { title: 'Create User' }) %>
+
+<div class="row">
+  <div class="col-6 col-md-10 col-sm-12" style="margin:0 auto">
+    <div class="card">
+      <div class="card-head"><h2><svg class="ic"><use href="#i-user-plus"/></svg> Create New User</h2></div>
+      <div class="card-body">
+        <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+        <% if (success) { %><div class="alert alert-success"><%= success %></div><% } %>
+        <form method="POST" action="/admin/create" class="form">
+          <div class="row">
+            <div class="col-6 col-sm-12"><div class="field"><label>Username</label><input type="text" name="username" required autofocus></div></div>
+            <div class="col-6 col-sm-12"><div class="field"><label>Email</label><input type="email" name="email" required></div></div>
+          </div>
+          <div class="row">
+            <div class="col-6 col-sm-12"><div class="field"><label>Password</label><input type="password" name="password" placeholder="Min 6 characters" required></div></div>
+            <div class="col-6 col-sm-12"><div class="field"><label>Role</label>
+              <select name="role">
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div></div>
+          </div>
+          <button class="btn btn-accent" type="submit"><svg class="ic"><use href="#i-user-plus"/></svg> Create User</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../../partials/footer') %>

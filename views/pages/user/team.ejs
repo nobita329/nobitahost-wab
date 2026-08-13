@@ -1,0 +1,157 @@
+<%- include('../../partials/head', { title: 'Team' }) %>
+
+<% if (query.created) { %><div class="alert alert-success">Team member created.</div><% } %>
+<% if (query.edited) { %><div class="alert alert-success">Team member updated.</div><% } %>
+<% if (query.deleted) { %><div class="alert alert-success">Team member deleted.</div><% } %>
+<% if (query.error === 'role') { %><div class="alert alert-error">Role name is required.</div><% } %>
+<% if (query.error === 'roleexists') { %><div class="alert alert-error">That role already exists.</div><% } %>
+
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-head">
+        <h2><svg class="ic"><use href="#i-users"/></svg> Team Members</h2>
+        <% if (isAdmin) { %>
+        <div class="head-actions">
+          <button class="btn btn-accent btn-sm" data-modal="#modalTeam"><svg class="ic"><use href="#i-user-plus"/></svg> New Team Member</button>
+        </div>
+        <% } %>
+      </div>
+      <div class="card-body content-area"><%- page.content %></div>
+    </div>
+  </div>
+</div>
+
+<% if (members && members.length) { %>
+<div class="row">
+  <div class="col-12">
+    <div class="card table-card">
+      <table>
+        <thead>
+          <tr><th>User</th><th>Role</th><th>Status</th><th>Last Login</th><th>Created</th><th class="ta-r">Actions</th></tr>
+        </thead>
+        <tbody>
+          <% members.forEach(function(m){ %>
+          <tr>
+            <td>
+              <div class="t-user">
+                <img class="avatar" src="<%= m.profile_pic || '/img/avatar.svg' %>" alt="">
+                <div><b><%= m.username %></b><small><%= m.email %></small></div>
+              </div>
+            </td>
+            <td>
+              <% var roleName = m.custom_role || (m.role === 'admin' ? 'Admin' : 'Member'); %>
+              <% var roleColor = m.custom_color || (m.role === 'admin' ? '#f59e0b' : '#8b5cf6'); %>
+              <span class="badge" style="background: <%= roleColor %>22; color: <%= roleColor %>; border: 1px solid <%= roleColor %>55;"><%= roleName %></span>
+            </td>
+            <td><span class="badge <%= m.status === 'active' ? 'green' : 'red' %>"><%= m.status %></span></td>
+            <td><%= m.last_login ? m.last_login.replace('T', ' ').slice(0, 16) : '—' %></td>
+            <td><%= m.created_at.replace('T', ' ').slice(0, 10) %></td>
+            <td class="ta-r">
+              <div class="row-actions">
+                <a class="icon-btn" href="/team/member/<%= m.id %>" title="Profile"><svg class="ic"><use href="#i-eye"/></svg></a>
+                <% if (isAdmin) { %>
+                <button class="icon-btn" data-modal="#modalEdit<%= m.id %>" title="Edit"><svg class="ic"><use href="#i-pencil"/></svg></button>
+                <% if (m.id !== user.id) { %>
+                <form method="POST" action="/team/<%= m.id %>/suspend" class="inline">
+                  <button class="icon-btn <%= m.status === 'suspended' ? 'ok' : 'warn' %>" title="<%= m.status === 'suspended' ? 'Activate' : 'Suspend' %>"><svg class="ic"><use href="#i-ban"/></svg></button>
+                </form>
+                <form method="POST" action="/team/<%= m.id %>/delete" class="inline" data-confirm="Delete <%= m.username %>?">
+                  <button class="icon-btn danger" title="Delete"><svg class="ic"><use href="#i-trash"/></svg></button>
+                </form>
+                <% } %>
+                <% } %>
+              </div>
+            </td>
+          </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<% } else { %>
+<div class="card"><div class="empty">No team members yet.</div></div>
+<% } %>
+
+<% if (isAdmin) { %>
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-head"><h2><svg class="ic"><use href="#i-shield"/></svg> Manage Roles</h2></div>
+      <div class="card-body">
+        <form method="POST" action="/team/roles/create" class="form form-row">
+          <div class="field"><label>New Role Name</label><input type="text" name="name" placeholder="e.g. CEO, Designer" required></div>
+          <div class="field"><label>Color</label><input type="color" name="color" value="#3b82f6" style="height:42px;padding:4px"></div>
+          <div class="field" style="display:flex;align-items:flex-end"><button class="btn btn-accent" type="submit">Add Role</button></div>
+        </form>
+        <div class="role-list">
+          <% roles.forEach(function(r){ %>
+          <div class="role-item">
+            <span class="badge" style="background: <%= r.color %>22; color: <%= r.color %>; border: 1px solid <%= r.color %>55;"><%= r.name %></span>
+            <div class="row-actions">
+              <button class="icon-btn" data-modal="#modalRole<%= r.id %>" title="Edit"><svg class="ic"><use href="#i-pencil"/></svg></button>
+              <form method="POST" action="/team/roles/<%= r.id %>/delete" class="inline" data-confirm="Delete role <%= r.name %>? Members with it lose the role.">
+                <button class="icon-btn danger" title="Delete"><svg class="ic"><use href="#i-trash"/></svg></button>
+              </form>
+            </div>
+          </div>
+          <% }); %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modalTeam">
+  <div class="modal-card">
+    <div class="modal-head"><h3>Add Team Member</h3><button class="icon-btn" data-close=""><svg class="ic"><use href="#i-x"/></svg></button></div>
+    <form method="POST" action="/team/create" class="form">
+      <div class="field"><label>Username</label><input type="text" name="username" required autocomplete="off"></div>
+      <div class="field"><label>Email</label><input type="email" name="email" required></div>
+      <div class="field"><label>Password</label><input type="password" name="password" placeholder="Min 6 characters" required></div>
+      <div class="field"><label>Role</label>
+        <select name="custom_role_id">
+          <option value="">Default (Member)</option>
+          <% roles.forEach(function(r){ %><option value="<%= r.id %>"><%= r.name %></option><% }); %>
+        </select>
+      </div>
+      <button class="btn btn-accent btn-block" type="submit">Create Member</button>
+    </form>
+  </div>
+</div>
+
+<% members.forEach(function(m){ %>
+<div class="modal" id="modalEdit<%= m.id %>">
+  <div class="modal-card">
+    <div class="modal-head"><h3>Edit <%= m.username %></h3><button class="icon-btn" data-close=""><svg class="ic"><use href="#i-x"/></svg></button></div>
+    <form method="POST" action="/team/<%= m.id %>/edit" class="form">
+      <div class="field"><label>Username</label><input type="text" name="username" value="<%= m.username %>" required></div>
+      <div class="field"><label>Email</label><input type="email" name="email" value="<%= m.email %>" required></div>
+      <div class="field"><label>Role</label>
+        <select name="custom_role_id">
+          <option value="">Default (Member)</option>
+          <% roles.forEach(function(r){ %><option value="<%= r.id %>" <%= m.custom_role_id === r.id ? 'selected' : '' %>><%= r.name %></option><% }); %>
+        </select>
+      </div>
+      <button class="btn btn-accent btn-block" type="submit">Save Changes</button>
+    </form>
+  </div>
+</div>
+<% }); %>
+
+<% roles.forEach(function(r){ %>
+<div class="modal" id="modalRole<%= r.id %>">
+  <div class="modal-card">
+    <div class="modal-head"><h3>Edit Role</h3><button class="icon-btn" data-close=""><svg class="ic"><use href="#i-x"/></svg></button></div>
+    <form method="POST" action="/team/roles/<%= r.id %>/edit" class="form">
+      <div class="field"><label>Role Name</label><input type="text" name="name" value="<%= r.name %>" required></div>
+      <div class="field"><label>Color</label><input type="color" name="color" value="<%= r.color %>" style="height:42px;padding:4px;width:100%"></div>
+      <button class="btn btn-accent btn-block" type="submit">Save Role</button>
+    </form>
+  </div>
+</div>
+<% }); %>
+<% } %>
+
+<%- include('../../partials/footer') %>

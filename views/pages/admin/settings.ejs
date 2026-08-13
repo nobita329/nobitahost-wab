@@ -1,0 +1,291 @@
+<%- include('../../partials/head', { title: 'Settings Management' }) %>
+
+<% if (saved) { %><div class="alert alert-success">Settings saved successfully.</div><% } %>
+
+<div class="row">
+  <div class="col-12">
+    <div class="hero-card small">
+      <div class="hero-inner">
+        <div>
+          <span class="badge badge-gold">Admin Only</span>
+          <h1>Panel <span class="grad-text">Settings</span></h1>
+          <p>Customise branding, background, music, appearance, email and behaviour.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<form method="POST" action="/admin/settings" enctype="multipart/form-data" id="settingsForm">
+  <div class="row">
+
+    <div class="col-6 col-md-12">
+      <div class="card">
+        <div class="card-head"><h2><svg class="ic"><use href="#i-sliders"/></svg> General</h2></div>
+        <div class="card-body">
+          <div class="field"><label>Panel Name</label><input type="text" name="panel_name" value="<%= settings.panel_name %>" data-live="panelName"></div>
+          <div class="field"><label>Panel Tagline</label><input type="text" name="panel_tagline" value="<%= settings.panel_tagline %>"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2><svg class="ic"><use href="#i-file"/></svg> Logo & Branding</h2></div>
+        <div class="card-body">
+          <div class="field"><label>Logo Type</label>
+            <select name="logo_type" data-live="logoType">
+              <option value="emoji" <%= settings.logo_type === 'emoji' ? 'selected' : '' %>>Emoji</option>
+              <option value="url" <%= settings.logo_type === 'url' ? 'selected' : '' %>>Image / URL</option>
+            </select>
+          </div>
+          <div class="field" id="logoEmojiField"><label>Logo Emoji</label><input type="text" name="logo_emoji" value="<%= settings.logo_emoji %>" data-live="logoEmoji"></div>
+          <div class="field" id="logoUrlField">
+            <label>Logo URL <small>(or upload)</small></label>
+            <input type="text" name="logo_url" value="<%= settings.logo_url %>" placeholder="https://... or /uploads/..." data-live="logoUrl">
+            <input type="file" name="logo_file" accept="image/*" class="mt-sm" data-preview="logoPreview">
+          </div>
+          <div class="preview-row">
+            <span>Live preview</span>
+            <div class="logo-preview" id="logoPreview"><%= settings.logo_type === 'url' && settings.logo_url ? '<img src="' + settings.logo_url + '">' : settings.logo_emoji %></div>
+          </div>
+
+          <hr>
+          <div class="field"><label>Favicon URL <small>(ico/png/svg)</small></label>
+            <input type="text" name="favicon_url" value="<%= settings.favicon_url %>" placeholder="https://... or /uploads/..." data-live="faviconUrl">
+            <input type="file" name="favicon_file" accept="image/*,.ico" class="mt-sm" data-preview="faviconPreview">
+          </div>
+          <div class="preview-row">
+            <span>Favicon preview</span>
+            <div class="favicon-preview" id="faviconPreview"><% if (settings.favicon_url) { %><img src="<%= settings.favicon_url %>"><% } else { %><img src="/img/favicon.svg"><% } %></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2><svg class="ic"><use href="#i-play"/></svg> Panel Music</h2></div>
+        <div class="card-body">
+          <div class="field"><label>Music Type</label>
+            <select name="music_type" data-live="musicType">
+              <option value="none" <%= settings.music_type === 'none' ? 'selected' : '' %>>None</option>
+              <option value="url" <%= settings.music_type === 'url' ? 'selected' : '' %>>Audio URL / Upload</option>
+              <option value="youtube" <%= settings.music_type === 'youtube' ? 'selected' : '' %>>YouTube</option>
+            </select>
+          </div>
+          <div class="field"><label>Music URL <small>(mp3/ogg/wav or YouTube link)</small></label>
+            <input type="text" name="music_url" value="<%= settings.music_url %>" placeholder="https://..." data-live="musicUrl">
+            <input type="file" name="music_file" accept="audio/*,.mp3,.wav,.ogg,.m4a" class="mt-sm">
+          </div>
+          <div class="field"><label>Volume <small>(<span id="volVal"><%= settings.music_volume %></span>%)</small></label>
+            <input type="range" name="music_volume" min="0" max="100" value="<%= settings.music_volume %>" data-live="musicVolume">
+          </div>
+          <div class="preview-row"><span>Music preview</span>
+            <button type="button" class="btn btn-ghost btn-sm" id="musicTestBtn">Play / Stop</button>
+            <audio id="musicTestAudio" src="<%= settings.music_url %>"></audio>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2><svg class="ic"><use href="#i-chat"/></svg> Discord Widget</h2></div>
+        <div class="card-body">
+          <div class="switch-row"><div><b>Show on Home</b><small>Display the Discord chat & members widgets on the home page</small></div>
+            <label class="switch"><input type="checkbox" name="discord_enabled" <%= settings.discord_enabled === 'on' ? 'checked' : '' %>><span></span></label>
+          </div>
+          <div class="field"><label>Server ID</label><input type="text" name="discord_server_id" value="<%= settings.discord_server_id %>" placeholder="1472654686174843012" data-live="discordServer"></div>
+          <div class="field"><label>WidgetBot Channel ID <small>(left chat panel)</small></label><input type="text" name="discord_channel" value="<%= settings.discord_channel %>" placeholder="1525049151627333715"></div>
+          <div class="field"><label>Widget Theme</label>
+            <select name="discord_theme">
+              <option value="dark" <%= settings.discord_theme === 'dark' ? 'selected' : '' %>>Dark</option>
+              <option value="light" <%= settings.discord_theme === 'light' ? 'selected' : '' %>>Light</option>
+            </select>
+          </div>
+          <div class="preview-row"><span>Live preview</span>
+            <iframe id="discordPreview" src="https://discord.com/widget?id=<%= settings.discord_server_id %>&theme=<%= settings.discord_theme %>" width="100%" height="280" allowtransparency="true" frameborder="0" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md-12">
+      <div class="card">
+        <div class="card-head"><h2><svg class="ic"><use href="#i-eye"/></svg> Panel Background</h2></div>
+        <div class="card-body">
+          <div class="field"><label>Background Type</label>
+            <select name="background_type" data-live="bgType">
+              <option value="image" <%= settings.background_type !== 'video' ? 'selected' : '' %>>Image</option>
+              <option value="video" <%= settings.background_type === 'video' ? 'selected' : '' %>>Video</option>
+            </select>
+          </div>
+          <div class="field"><label>Background URL <small>(image or video)</small></label>
+            <input type="text" name="background_url" value="<%= settings.background_url %>" placeholder="https://... or /uploads/..." data-live="bgUrl">
+            <input type="file" name="background_file" accept="image/*,video/*" class="mt-sm" data-live="bgFile">
+          </div>
+
+          <div class="wp-badges">
+            <button type="button" class="btn btn-accent" id="wpBrowseBtn"><svg class="ic"><use href="#i-image"/></svg> Browse 4K Wallpapers</button>
+            <button type="button" class="btn" id="wpFavBtn"><svg class="ic"><use href="#i-heart"/></svg> Favorites (<span id="wpFavCount"><%= favs.length %></span>)</button>
+          </div>
+
+          <div class="field mt-sm"><label>4K Wallpapers Random Source <small>(https://4kwallpapers.com)</small></label>
+            <select name="background_source" data-live="bgSource">
+              <% sources.forEach(function(src){ %>
+              <option value="<%= src.slug %>" <%= settings.background_source === src.slug ? 'selected' : '' %>><%= src.label %></option>
+              <% }); %>
+            </select>
+            <% if (settings.background_source && settings.background_source !== 'none') { %>
+            <small class="hint"><a href="https://4kwallpapers.com/<%= settings.background_source %>/" target="_blank" rel="noopener">Open <%= settings.background_source %> on 4kwallpapers.com</a></small>
+            <% } %>
+          </div>
+
+          <div class="preview-row"><span>Live preview</span>
+            <div class="bg-preview" id="bgPreview">
+              <div class="bgp-img" data-preview-img></div>
+              <video data-preview-video muted loop playsinline hidden></video>
+              <div class="bgp-overlay"></div>
+              <div class="bgp-label">NobitaHost</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2><svg class="ic"><use href="#i-sliders"/></svg> Glass & Transparency</h2></div>
+        <div class="card-body">
+          <div class="field"><label>Theme</label>
+            <select name="theme" data-live="theme">
+              <option value="dark" <%= settings.theme !== 'light' ? 'selected' : '' %>>Dark</option>
+              <option value="light" <%= settings.theme === 'light' ? 'selected' : '' %>>Light</option>
+            </select>
+          </div>
+
+          <div class="range-row">
+            <div class="range-top"><div><b>Transparency</b><small>How much the wallpaper shows through</small></div><span class="range-val" id="transVal"><%= settings.transparency || 100 %>%</span></div>
+            <input type="range" name="transparency" min="0" max="100" step="5" value="<%= settings.transparency || 100 %>" data-live="transparency">
+          </div>
+
+          <div class="range-row">
+            <div class="range-top"><div><b>Blur <small>(Glassmorphism)</small></b><small>Frosted-glass blur strength</small></div><span class="range-val" id="blurVal"><%= glass %>px</span></div>
+            <input type="range" name="panel_blur" min="0" max="40" step="1" value="<%= glass %>" data-live="panelBlur">
+          </div>
+
+          <div class="row">
+            <div class="col-6 col-sm-12"><div class="field"><label>Card Radius <small>(px)</small></label><input type="number" name="card_radius" min="0" max="40" value="<%= settings.card_radius %>" data-live="cardRadius"></div></div>
+            <div class="col-6 col-sm-12"><div class="field"><label>Accent Color</label><input type="color" name="accent_color" value="<%= settings.accent_color %>" data-live="accentColor"></div></div>
+          </div>
+
+          <div class="preview-row"><span>Changes save automatically</span>
+            <button type="button" class="btn btn-danger btn-sm" id="resetAppearanceBtn">Reset to Default</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2><svg class="ic"><use href="#i-play"/></svg> YouTube Channel <small>Tutorials</small></h2></div>
+        <div class="card-body">
+          <div class="switch-row"><div><b>Show on Tutorials</b><small>Auto-display channel videos & stats on the tutorials page</small></div>
+            <label class="switch"><input type="checkbox" name="youtube_enabled" <%= settings.youtube_enabled === 'on' ? 'checked' : '' %>><span></span></label>
+          </div>
+          <div class="field"><label>Channel <small>(handle, URL or channel ID)</small></label>
+            <input type="text" name="youtube_channel" value="<%= settings.youtube_channel %>" placeholder="@codinghub_studiyo" data-live="ytChannel">
+          </div>
+          <div class="field"><label>YouTube Data API Key <small>(optional — enables likes, views & all videos)</small></label>
+            <input type="text" name="youtube_api_key" value="<%= settings.youtube_api_key %>" placeholder="AIza..." autocomplete="off">
+            <small class="hint">No key? Latest 15 videos auto-load with subscribers count. Add an API key for full stats & all videos.</small>
+          </div>
+          <div class="preview-row"><span>Channel preview</span>
+            <div class="yt-preview">
+              <div class="yt-avatar" id="ytAvatar">▶</div>
+              <div><b id="ytTitle"><%= settings.youtube_channel %></b><span class="hint" id="ytHandle"></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2><svg class="ic"><use href="#i-user"/></svg> Instagram <small>Home social card</small></h2></div>
+        <div class="card-body">
+          <div class="field"><label>Instagram Handle</label>
+            <input type="text" name="instagram_handle" value="<%= settings.instagram_handle %>" placeholder="@nobita_dev.in">
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2><svg class="ic"><use href="#i-terminal"/></svg> Automated Script</h2></div>
+        <div class="card-body">
+          <div class="switch-row"><div><b>Show on Home</b><small>Display the automated script section on the home page</small></div>
+            <label class="switch"><input type="checkbox" name="script_enabled" <%= settings.script_enabled === 'on' ? 'checked' : '' %>><span></span></label>
+          </div>
+          <div class="field"><label>Badge Text</label><input type="text" name="script_badge" value="<%= settings.script_badge %>" placeholder="ALL IN ONE CMD" data-live="scriptBadge"></div>
+          <div class="field"><label>Description</label><input type="text" name="script_description" value="<%= settings.script_description %>" placeholder="Execute the master script to install all dependencies instantly." data-live="scriptDesc"></div>
+          <div class="field"><label>Script Command</label><input type="text" name="script_command" value="<%= settings.script_command %>" placeholder="bash <(curl -s https://example.com)" data-live="scriptCmd"></div>
+          <div class="preview-row"><span>Live preview</span>
+            <div class="script-preview">
+              <div class="cmd"><code id="scriptCmdPreview"><%= settings.script_command %></code><button type="button" class="btn btn-accent btn-sm" id="scriptCopyPreview">COPY</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2><svg class="ic"><use href="#i-mail"/></svg> Email / SMTP</h2></div>
+        <div class="card-body">
+          <div class="switch-row"><div><b>Enable Email</b><small>Send welcome & password-reset emails</small></div>
+            <label class="switch"><input type="checkbox" name="mail_enabled" <%= settings.mail_enabled === 'on' ? 'checked' : '' %>><span></span></label>
+          </div>
+          <div class="row">
+            <div class="col-8 col-sm-12"><div class="field"><label>SMTP Host</label><input type="text" name="smtp_host" value="<%= settings.smtp_host %>" placeholder="smtp.gmail.com"></div></div>
+            <div class="col-4 col-sm-12"><div class="field"><label>Port</label><input type="text" name="smtp_port" value="<%= settings.smtp_port %>"></div></div>
+          </div>
+          <div class="row">
+            <div class="col-6 col-sm-12"><div class="field"><label>SMTP User</label><input type="text" name="smtp_user" value="<%= settings.smtp_user %>" autocomplete="off"></div></div>
+            <div class="col-6 col-sm-12"><div class="field"><label>SMTP Password</label><input type="password" name="smtp_pass" value="<%= settings.smtp_pass %>" autocomplete="new-password"></div></div>
+          </div>
+          <div class="switch-row"><div><b>Secure Connection (TLS)</b><small>Enable for port 465</small></div>
+            <label class="switch"><input type="checkbox" name="smtp_secure" <%= settings.smtp_secure === 'true' ? 'checked' : '' %>><span></span></label>
+          </div>
+          <div class="field"><label>From Address</label><input type="text" name="mail_from" value="<%= settings.mail_from %>"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2><svg class="ic"><use href="#i-shield"/></svg> Behaviour</h2></div>
+        <div class="card-body">
+          <div class="switch-row"><div><b>Open Registration</b><small>Allow new users to register</small></div>
+            <label class="switch"><input type="checkbox" name="register_open" <%= settings.register_open === 'on' ? 'checked' : '' %>><span></span></label>
+          </div>
+          <div class="switch-row"><div><b>Maintenance Mode</b><small>Block non-admin visitors</small></div>
+            <label class="switch"><input type="checkbox" name="maintenance" <%= settings.maintenance === 'on' ? 'checked' : '' %>><span></span></label>
+          </div>
+        </div>
+      </div>
+
+      <div class="sticky-save">
+        <button class="btn btn-accent btn-block btn-lg" type="submit"><svg class="ic"><use href="#i-shield"/></svg> Save All Settings</button>
+      </div>
+    </div>
+
+  </div>
+</form>
+
+<div class="modal" id="wpModal">
+  <div class="modal-card wp-modal">
+    <div class="modal-head">
+      <h3><svg class="ic"><use href="#i-image"/></svg> Browse 4K Wallpapers</h3>
+      <button type="button" class="btn btn-ghost btn-sm" data-close>✕</button>
+    </div>
+    <div class="wp-toolbar">
+      <select id="wpCat"><% wpCats.forEach(function(c){ %><option value="<%= c.slug %>" <%= c.slug === 'all' ? 'selected' : '' %>><%= c.label %></option><% }); %></select>
+      <input id="wpSearch" type="text" placeholder="Search wallpapers…">
+      <button type="button" class="btn btn-accent" id="wpSearchBtn">Search</button>
+      <button type="button" class="btn" id="wpClearBtn">Reset</button>
+    </div>
+    <div class="wp-grid" id="wpGrid"><div class="wp-loading"><span class="wp-spin"></span> Loading wallpapers…</div></div>
+    <div class="wp-pager">
+      <button type="button" class="btn" id="wpPrev">← Prev</button>
+      <span id="wpPageInfo"></span>
+      <button type="button" class="btn" id="wpNext">Next →</button>
+    </div>
+  </div>
+</div>
+
+<%- include('../../partials/footer', { extraScripts: '<script src="/js/settings.js"></script>' }) %>

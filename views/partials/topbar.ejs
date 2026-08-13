@@ -1,0 +1,31 @@
+<header class="topbar">
+  <div class="tb-left">
+    <button class="icon-btn" id="sidebarToggle" aria-label="Toggle sidebar"><svg class="ic"><use href="#i-menu"/></svg></button>
+    <h1 class="page-title"><%= title %></h1>
+  </div>
+  <div class="tb-right">
+    <% if (user && user.role === 'admin') { %>
+    <a class="btn btn-ghost btn-sm hide-mobile" href="/admin/create"><svg class="ic"><use href="#i-user-plus"/></svg> Create User</a>
+    <% } %>
+    <div class="user-chip" id="userChip">
+      <img class="avatar" src="<%= user ? (user.profile_pic || '/img/avatar.svg') : '/img/avatar.svg' %>" alt="">
+      <span class="chip-name hide-mobile"><%= user ? user.username : 'Guest' %></span>
+      <span class="badge <%= user && user.role === 'admin' ? 'gold' : '' %>"><%= user ? user.role : '—' %></span>
+      <svg class="ic chev"><use href="#i-chevron"/></svg>
+      <div class="user-dropdown" id="userDropdown">
+        <% if (user) { %>
+        <a href="/profile"><svg class="ic"><use href="#i-user"/></svg> My Profile</a>
+        <% } else { %>
+        <a href="/login"><svg class="ic"><use href="#i-logout"/></svg> Login</a>
+        <% } %>
+        <% if (user && user.role === 'admin') { %>
+        <a href="/admin"><svg class="ic"><use href="#i-gauge"/></svg> Admin Dashboard</a>
+        <% } %>
+        <hr>
+        <% if (user) { %>
+        <a href="/logout"><svg class="ic"><use href="#i-logout"/></svg> Logout</a>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</header>

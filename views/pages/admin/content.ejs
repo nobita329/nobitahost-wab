@@ -1,0 +1,91 @@
+<%- include('../../partials/head', { title: 'Content Management' }) %>
+
+<% if (editing) { %>
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-head"><h2><svg class="ic"><use href="#i-pencil"/></svg> Edit Page · /<%= editing.slug %></h2>
+        <a class="btn btn-ghost btn-sm" href="/admin/settings/content">← Back to list</a>
+      </div>
+      <div class="card-body">
+        <% if (query.saved || query.created) { %><div class="alert alert-success"><%= query.created ? 'Page created.' : 'Page saved.' %></div><% } %>
+        <form method="POST" action="/admin/settings/content/<%= editing.slug %>" class="form">
+          <div class="field"><label>Page Title</label><input type="text" name="title" value="<%= editing.title %>"></div>
+          <div class="field"><label>Content <small>(HTML allowed)</small></label>
+            <textarea name="content" rows="18" class="mono"><%= editing.content %></textarea>
+          </div>
+          <button class="btn btn-accent" type="submit">Save Page</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<% } else { %>
+
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-head"><h2><svg class="ic"><use href="#i-plus"/></svg> Create New Custom Page</h2></div>
+      <div class="card-body">
+        <% if (query.error === 'create') { %><div class="alert alert-error">Title and slug are required.</div><% } %>
+        <% if (query.error === 'exists') { %><div class="alert alert-error">A page with that slug already exists.</div><% } %>
+        <% if (query.error === 'system') { %><div class="alert alert-error">System pages cannot be deleted.</div><% } %>
+        <% if (query.deleted) { %><div class="alert alert-success">Custom page deleted.</div><% } %>
+        <form method="POST" action="/admin/settings/content/create" class="form">
+          <div class="form-row">
+            <div class="field"><label>Page Title</label><input type="text" name="title" required placeholder="e.g. FAQ"></div>
+            <div class="field"><label>Slug <small>(URL: /page/slug)</small></label><input type="text" name="slug" required pattern="[a-z0-9-]+" placeholder="faq"></div>
+          </div>
+          <div class="form-row">
+            <div class="field"><label>Icon <small>(emoji)</small></label><input type="text" name="icon" value="📄" placeholder="📄"></div>
+            <div class="field">
+              <label>Sidebar</label>
+              <div class="switch-row" style="padding: 6px 0">
+                <div>
+                  <b>Show in sidebar</b>
+                  <small>Adds the page to the navigation</small>
+                </div>
+                <label class="switch"><input type="checkbox" name="in_nav" checked><span></span></label>
+              </div>
+            </div>
+          </div>
+          <div class="field"><label>Content <small>(HTML allowed)</small></label>
+            <textarea name="content" rows="10" class="mono" placeholder="<h1>My Page</h1><p>Custom HTML content…</p>"></textarea>
+          </div>
+          <button class="btn btn-accent" type="submit">Create Page</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card table-card">
+  <div class="card-head"><h2><svg class="ic"><use href="#i-file"/></svg> Content Pages</h2>
+    <span class="hint">Click edit to change what users see on each page.</span>
+  </div>
+  <table>
+    <thead><tr><th>Page</th><th>Title</th><th>Type</th><th>Updated</th><th class="ta-r">Actions</th></tr></thead>
+    <tbody>
+      <% pages.forEach(function(p){ %>
+      <tr>
+        <td><span class="badge">/<%= p.slug %></span></td>
+        <td><b><%= p.icon %> <%= p.title %></b></td>
+        <td><% if (contentSlugs.indexOf(p.slug) === -1) { %><span class="badge badge-accent">Custom</span><% } else { %><span class="badge">System</span><% } %></td>
+        <td><%= p.updated_at ? p.updated_at.replace('T', ' ').slice(0, 16) : '—' %></td>
+        <td class="ta-r">
+          <a class="btn btn-ghost btn-sm" href="/admin/settings/content?edit=<%= p.slug %>"><svg class="ic"><use href="#i-pencil"/></svg> Edit</a>
+          <a class="btn btn-ghost btn-sm" href="<%= contentSlugs.indexOf(p.slug) === -1 ? '/page/' + p.slug : '/' + p.slug %>" target="_blank"><svg class="ic"><use href="#i-eye"/></svg> View</a>
+          <% if (contentSlugs.indexOf(p.slug) === -1) { %>
+          <form method="POST" action="/admin/settings/content/<%= p.slug %>/delete" class="inline" onsubmit="return confirm('Delete this custom page?')">
+            <button class="btn btn-danger btn-sm" type="submit"><svg class="ic"><use href="#i-trash"/></svg> Delete</button>
+          </form>
+          <% } %>
+        </td>
+      </tr>
+      <% }); %>
+    </tbody>
+  </table>
+</div>
+<% } %>
+
+<%- include('../../partials/footer') %>

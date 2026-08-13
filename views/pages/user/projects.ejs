@@ -1,0 +1,114 @@
+<%- include('../../partials/head', { title: 'Projects' }) %>
+
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-head"><h2><svg class="ic"><use href="#i-folder"/></svg> Projects</h2></div>
+      <div class="card-body content-area"><%- page.content %></div>
+    </div>
+  </div>
+</div>
+
+<% if (isAdmin) { %>
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-head">
+        <h2><svg class="ic"><use href="#i-pencil"/></svg> Manage Projects</h2>
+        <button class="btn btn-accent btn-sm" type="button" id="projectAddBtn"><svg class="ic"><use href="#i-plus"/></svg> Add Project</button>
+      </div>
+      <div class="card-body">
+        <% if (query.saved) { %><div class="alert alert-success">Project saved.</div><% } %>
+        <% if (query.deleted) { %><div class="alert alert-success">Project deleted.</div><% } %>
+        <% if (query.error === 'name') { %><div class="alert alert-error">Project name is required.</div><% } %>
+        <form method="POST" action="/projects/add" class="form" id="projectAddForm" hidden>
+          <div class="form-row">
+            <div class="field"><label>Project Name</label><input type="text" name="name" required placeholder="e.g. My Website"></div>
+            <div class="field"><label>Link (URL)</label><input type="url" name="url" placeholder="https://…"></div>
+          </div>
+          <div class="form-row">
+            <div class="field"><label>Description</label><input type="text" name="description" placeholder="Short description"></div>
+            <div class="field"><label>Button Text</label><input type="text" name="button" value="View Project" placeholder="View Project"></div>
+          </div>
+          <div class="field"><label>Thumbnail URL <small>(image)</small></label><input type="url" name="thumbnail" placeholder="https://…/image.png"></div>
+          <div class="field"><label>HTML Content <small>(rendered in Live Preview)</small></label>
+            <textarea name="html" rows="10" class="mono" placeholder="<h1>Hello</h1><p>This shows in the preview modal.</p>"></textarea>
+          </div>
+          <button class="btn btn-accent" type="submit">Save Project</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<% } %>
+
+<div class="row">
+  <% (projects || []).forEach(function(p){ %>
+  <div class="col-3 col-md-6 col-sm-12">
+    <div class="project-card-wrap">
+      <div class="card project-card">
+        <div class="project-thumb">
+          <% if (p.thumbnail) { %>
+            <img src="<%= p.thumbnail %>" alt="<%= p.name %>" loading="lazy">
+          <% } else { %>
+            <div class="project-thumb-ph"><svg class="ic"><use href="#i-folder"/></svg></div>
+          <% } %>
+        </div>
+        <div class="project-body">
+          <h3><%= p.name %></h3>
+          <% if (p.description) { %><p class="project-desc"><%= p.description %></p><% } %>
+          <div class="project-actions">
+            <button type="button" class="btn btn-ghost btn-sm project-preview" <%= p.html ? '' : 'disabled' %>><svg class="ic"><use href="#i-eye"/></svg> Live Preview</button>
+            <% if (p.url) { %><a class="btn btn-accent btn-sm" href="<%= p.url %>" target="_blank" rel="noopener"><%= p.button || 'View Project' %></a><% } %>
+          </div>
+          <% if (isAdmin) { %>
+          <div class="link-actions">
+            <button class="icon-btn" type="button" data-toggle-edit="<%= p.id %>" title="Edit"><svg class="ic"><use href="#i-pencil"/></svg></button>
+            <form method="POST" action="/projects/<%= p.id %>/delete" onsubmit="return confirm('Delete this project?')">
+              <button class="icon-btn danger" type="submit" title="Delete"><svg class="ic"><use href="#i-trash"/></svg></button>
+            </form>
+          </div>
+          <% } %>
+        </div>
+      </div>
+      <% if (isAdmin) { %>
+      <form method="POST" action="/projects/<%= p.id %>/edit" class="link-edit" id="projectEdit-<%= p.id %>" hidden>
+        <div class="field"><label>Name</label><input type="text" name="name" value="<%= p.name %>"></div>
+        <div class="form-row">
+          <div class="field"><label>Link</label><input type="url" name="url" value="<%= p.url %>"></div>
+          <div class="field"><label>Button Text</label><input type="text" name="button" value="<%= p.button %>"></div>
+        </div>
+        <div class="field"><label>Description</label><input type="text" name="description" value="<%= p.description %>"></div>
+        <div class="field"><label>Thumbnail URL</label><input type="url" name="thumbnail" value="<%= p.thumbnail %>"></div>
+        <div class="field"><label>HTML Content</label><textarea name="html" rows="8" class="mono"><%= p.html %></textarea></div>
+        <button class="btn btn-accent btn-sm" type="submit">Save</button>
+        <button class="btn btn-ghost btn-sm" type="button" data-toggle-edit="<%= p.id %>">Cancel</button>
+      </form>
+      <% } %>
+      <textarea class="project-html-src" hidden><%= p.html %></textarea>
+    </div>
+  </div>
+  <% }); %>
+</div>
+
+<% if (!projects || !projects.length) { %>
+<div class="card"><div class="empty">No projects yet. <% if (isAdmin) { %>Click <b>Add Project</b> above to create one.<% } else { %>Check back soon.<% } %></div></div>
+<% } %>
+
+<div class="preview-overlay" id="previewOverlay" hidden>
+  <div class="preview-box">
+    <div class="preview-head">
+      <h3 id="previewTitle">Preview</h3>
+      <span class="preview-hint">↔ Drag bottom-right corner to resize</span>
+      <button class="icon-btn" type="button" id="previewClose" title="Close"><svg class="ic"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="preview-stage">
+      <div class="preview-frame-wrap" id="previewWrap">
+        <iframe id="previewFrame" class="preview-frame" title="Project preview"></iframe>
+        <span class="resize-grip" id="previewResize" title="Drag to resize width"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../../partials/footer') %>

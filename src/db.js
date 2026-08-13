@@ -1,0 +1,171 @@
+const path = require('path');
+const fs = require('fs');
+const Database = require('better-sqlite3');
+
+const dataDir = path.join(__dirname, '..', 'data');
+const uploadsDir = path.join(__dirname, '..', 'public', 'uploads');
+
+for (const dir of [dataDir, uploadsDir]) {
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+}
+
+const db = new Database(path.join(dataDir, 'nobitahost.db'));
+db.pragma('journal_mode = WAL');
+db.pragma('foreign_keys = ON');
+
+db.exec(`
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username TEXT UNIQUE NOT NULL,
+  email TEXT UNIQUE NOT NULL,
+  password TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'user',
+  status TEXT NOT NULL DEFAULT 'active',
+  owner_id INTEGER DEFAULT NULL,
+  profile_pic TEXT DEFAULT '',
+  bio TEXT DEFAULT '',
+  two_factor_enabled INTEGER NOT NULL DEFAULT 0,
+  two_factor_secret TEXT DEFAULT NULL,
+  last_login TEXT,
+  last_ip TEXT DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS settings (
+  key TEXT PRIMARY KEY,
+  value TEXT
+);
+
+CREATE TABLE IF NOT EXISTS content_pages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  slug TEXT UNIQUE NOT NULL,
+  title TEXT NOT NULL,
+  content TEXT DEFAULT '',
+  updated_at TEXT,
+  updated_by INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS roles (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT UNIQUE NOT NULL,
+  color TEXT NOT NULL DEFAULT '#3b82f6',
+  sort_order INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS tutorials (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  description TEXT DEFAULT '',
+  video_url TEXT DEFAULT '',
+  thumbnail TEXT DEFAULT '',
+  author_id INTEGER,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS links (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  url TEXT DEFAULT '',
+  icon TEXT DEFAULT '🔗',
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS projects (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  description TEXT DEFAULT '',
+  url TEXT DEFAULT '',
+  button TEXT DEFAULT 'View Project',
+  thumbnail TEXT DEFAULT '',
+  html TEXT DEFAULT '',
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS github_links (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username TEXT NOT NULL,
+  url TEXT DEFAULT '',
+  note TEXT DEFAULT '',
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS activity (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER,
+  username TEXT,
+  action TEXT,
+  ip TEXT,
+  user_agent TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS analytics (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  page TEXT NOT NULL,
+  date TEXT NOT NULL DEFAULT (date('now')),
+  hits INTEGER NOT NULL DEFAULT 0,
+  UNIQUE(page, date)
+);
+
+CREATE TABLE IF NOT EXISTS reset_tokens (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  token TEXT NOT NULL,
+  used INTEGER NOT NULL DEFAULT 0,
+  expires_at TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  message TEXT NOT NULL,
+  read INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS system_stats (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  ts INTEGER NOT NULL,
+  cpu REAL NOT NULL,
+  mem REAL NOT NULL,
+  disk REAL NOT NULL,
+  rx REAL NOT NULL,
+  tx REAL NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_system_stats_ts ON system_stats(ts);
+`);
+
+const pageCols = db.pragma('table_info(content_pages)').map((c) => c.name);
+if (!pageCols.includes('in_nav')) db.exec("ALTER TABLE content_pages ADD COLUMN in_nav INTEGER NOT NULL DEFAULT 0");
+if (!pageCols.includes('icon')) db.exec("ALTER TABLE content_pages ADD COLUMN icon TEXT NOT NULL DEFAULT '📄'");
+
+const userCols = db.pragma('table_info(users)').map((c) => c.name);
+if (!userCols.includes('custom_role_id')) db.exec('ALTER TABLE users ADD COLUMN custom_role_id INTEGER DEFAULT NULL');
+if (!userCols.includes('is_demo')) db.exec('ALTER TABLE users ADD COLUMN is_demo INTEGER NOT NULL DEFAULT 0');
+
+const demoExists = db.prepare("SELECT id FROM users WHERE username = 'demo'").get();
+if (!demoExists) {
+  const bcrypt = require('bcryptjs');
+  db.prepare("INSERT INTO users (username, email, password, role, is_demo) VALUES ('demo', 'demo@nobitahost.in', ?, 'user', 1)")
+    .run(bcrypt.hashSync('demo123', 10));
+} else {
+  db.prepare("UPDATE users SET is_demo = 1, role = 'user' WHERE id = ?").run(demoExists.id);
+}
+
+const roleCount = db.prepare('SELECT COUNT(*) c FROM roles').get().c;
+if (roleCount === 0) {
+  const stmt = db.prepare('INSERT INTO roles (name, color, sort_order) VALUES (?, ?, ?)');
+  [
+    ['Owner', '#ef4444', 1],
+    ['Admin', '#f59e0b', 2],
+    ['Developer', '#3b82f6', 3],
+    ['Moderator', '#10b981', 4],
+    ['Member', '#8b5cf6', 5]
+  ].forEach((r) => stmt.run(r[0], r[1], r[2]));
+}
+
+module.exports = db;

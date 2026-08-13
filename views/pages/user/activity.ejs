@@ -1,0 +1,27 @@
+<%- include('../../partials/head', { title: 'Activity' }) %>
+
+<div class="row">
+  <div class="col-12">
+    <div class="card table-card">
+      <div class="card-head"><h2><svg class="ic"><use href="#i-clock"/></svg> Login & Activity History</h2></div>
+      <table>
+        <thead><tr><th>User</th><th>Action</th><th>IP Address</th><th>When</th></tr></thead>
+        <tbody>
+          <% (logs || []).forEach(function(l){ %>
+          <tr>
+            <td><b><%= l.username %></b></td>
+            <td><span class="badge <%= l.action.indexOf('ogged in') >= 0 ? 'green' : '' %>"><%= l.action %></span></td>
+            <td><code><%= l.ip || '—' %></code></td>
+            <td><%= l.created_at.replace('T', ' ').slice(0, 19) %></td>
+          </tr>
+          <% }); %>
+          <% if (!logs || !logs.length) { %>
+          <tr><td colspan="4"><div class="empty">No activity recorded yet.</div></td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<%- include('../../partials/footer') %>

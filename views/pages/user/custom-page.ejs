@@ -1,0 +1,12 @@
+<%- include('../../partials/head', { title: page.title }) %>
+
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-head"><h2><span class="nav-emoji"><%= page.icon %></span> <%= page.title %></h2></div>
+      <div class="card-body content-area"><%- page.content %></div>
+    </div>
+  </div>
+</div>
+
+<%- include('../../partials/footer') %>

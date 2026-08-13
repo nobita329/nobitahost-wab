@@ -1,0 +1,25 @@
+<%- include('../../partials/head', { title: 'Member Profile' }) %>
+
+<div class="row">
+  <div class="col-12">
+    <div class="card profile-card member-card">
+      <div class="profile-top">
+        <img class="avatar xl" src="<%= member.profile_pic || '/img/avatar.svg' %>" alt="">
+        <h3><%= member.username %></h3>
+        <p><%= member.email %></p>
+        <span class="badge <%= member.role === 'admin' ? 'gold' : '' %>"><%= member.role %></span>
+        <span class="badge <%= member.status === 'active' ? 'green' : 'red' %>"><%= member.status %></span>
+      </div>
+      <div class="profile-stats">
+        <div><b>#<%= member.id %></b><span>User ID</span></div>
+        <div><b><%= member.last_login ? member.last_login.replace('T', ' ').slice(0, 16) : '—' %></b><span>Last Login</span></div>
+        <div><b><%= member.created_at.slice(0, 10) %></b><span>Joined</span></div>
+      </div>
+      <div class="card-body">
+        <p class="bio-text"><%= member.bio || 'No bio yet.' %></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../../partials/footer') %>

@@ -1,0 +1,64 @@
+<%- include('../../partials/head', { title: 'Admin Dashboard' }) %>
+
+<div class="row">
+  <div class="col-12">
+    <div class="hero-card admin">
+      <div class="hero-inner">
+        <div>
+          <span class="badge badge-gold">Admin Panel</span>
+          <h1>Welcome, <span class="grad-text"><%= user.username %></span></h1>
+          <p>Manage users, content, tutorials and settings from one place.</p>
+        </div>
+        <div class="hero-actions">
+          <a class="btn btn-accent" href="/admin/create"><svg class="ic"><use href="#i-user-plus"/></svg> Create User</a>
+          <a class="btn btn-ghost" href="/admin/settings"><svg class="ic"><use href="#i-sliders"/></svg> Settings</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-3 col-md-6 col-sm-12"><div class="card stat-card"><div class="stat-icon accent1"><svg class="ic"><use href="#i-users"/></svg></div><div class="stat-meta"><b><%= stats.totalUsers %></b><span>Total Users</span></div></div></div>
+  <div class="col-3 col-md-6 col-sm-12"><div class="card stat-card"><div class="stat-icon accent2"><svg class="ic"><use href="#i-shield"/></svg></div><div class="stat-meta"><b><%= stats.activeUsers %></b><span>Active</span></div></div></div>
+  <div class="col-3 col-md-6 col-sm-12"><div class="card stat-card"><div class="stat-icon accent3"><svg class="ic"><use href="#i-eye"/></svg></div><div class="stat-meta"><b><%= stats.suspended %></b><span>Suspended</span></div></div></div>
+  <div class="col-3 col-md-6 col-sm-12"><div class="card stat-card"><div class="stat-icon accent4"><svg class="ic"><use href="#i-gauge"/></svg></div><div class="stat-meta"><b><%= stats.admins %></b><span>Admins</span></div></div></div>
+</div>
+
+<div class="row">
+  <div class="col-6 col-md-12">
+    <div class="card">
+      <div class="card-head"><h2><svg class="ic"><use href="#i-chart"/></svg> Traffic · Last 7 Days</h2></div>
+      <div class="card-body">
+        <% var dayTotals = {}; last7.forEach(function(r){ dayTotals[r.date] = (dayTotals[r.date] || 0) + r.hits; }); var dayList = Object.keys(dayTotals).slice(-7); var maxDay = Math.max(1, ...Object.values(dayTotals)); %>
+        <div class="bar-chart">
+          <% dayList.forEach(function(d){ %>
+            <div class="bar-col" title="<%= d %> — <%= dayTotals[d] %> views">
+              <div class="bar-track"><div class="bar" style="height:<%= Math.round(dayTotals[d]/maxDay*100) %>%"></div></div>
+              <span class="bar-label"><%= d.slice(5) %></span>
+            </div>
+          <% }); %>
+          <% if (!dayList.length) { %><div class="empty">No traffic yet.</div><% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-12">
+    <div class="card">
+      <div class="card-head"><h2><svg class="ic"><use href="#i-clock"/></svg> Recent Activity</h2></div>
+      <div class="card-body feed">
+        <% recent.forEach(function(l){ %>
+          <div class="feed-item">
+            <span class="feed-dot"></span>
+            <div><b><%= l.username %></b> <span><%= l.action %></span></div>
+            <small><%= l.created_at.replace('T', ' ').slice(0, 16) %></small>
+          </div>
+        <% }); %>
+        <% if (!recent.length) { %><div class="empty">No activity yet.</div><% } %>
+      </div>
+      <div class="card-foot"><a href="/admin/activity">View full activity log →</a></div>
+    </div>
+  </div>
+</div>
+
+<%- include('../../partials/footer') %>

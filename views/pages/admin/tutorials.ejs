@@ -1,0 +1,58 @@
+<%- include('../../partials/head', { title: 'Tutorials Management' }) %>
+
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-head"><h2><svg class="ic"><use href="#i-play"/></svg> Add Tutorial</h2></div>
+      <div class="card-body">
+        <% if (query.saved) { %><div class="alert alert-success">Tutorial added.</div><% } %>
+        <% if (query.deleted) { %><div class="alert alert-info">Tutorial deleted.</div><% } %>
+        <% if (query.error) { %><div class="alert alert-error">Title is required.</div><% } %>
+        <form method="POST" action="/admin/settings/tutorials" class="form">
+          <div class="row">
+            <div class="col-4 col-md-6 col-sm-12"><div class="field"><label>Title</label><input type="text" name="title" required></div></div>
+            <div class="col-8 col-md-6 col-sm-12"><div class="field"><label>Video URL <small>(YouTube)</small></label><input type="text" name="video_url" placeholder="https://youtube.com/watch?v=..."></div></div>
+          </div>
+          <div class="row">
+            <div class="col-8 col-md-6 col-sm-12"><div class="field"><label>Description</label><input type="text" name="description"></div></div>
+            <div class="col-4 col-md-6 col-sm-12"><div class="field"><label>Thumbnail URL <small>(optional)</small></label><input type="text" name="thumbnail"></div></div>
+          </div>
+          <button class="btn btn-accent" type="submit"><svg class="ic"><use href="#i-plus"/></svg> Add Tutorial</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card table-card">
+  <div class="card-head"><h2><svg class="ic"><use href="#i-book"/></svg> Tutorials</h2></div>
+  <table>
+    <thead><tr><th>Tutorial</th><th>Author</th><th>Added</th><th class="ta-r">Actions</th></tr></thead>
+    <tbody>
+      <% (tutorials || []).forEach(function(t){ %>
+      <tr>
+        <td>
+          <div class="t-user">
+            <div><b><%= t.title %></b><small><%= t.description %></small></div>
+          </div>
+        </td>
+        <td><%= t.author || '—' %></td>
+        <td><%= t.created_at.replace('T', ' ').slice(0, 10) %></td>
+        <td class="ta-r">
+          <div class="row-actions">
+            <% if (t.video_url) { %><a class="icon-btn" href="<%= t.video_url %>" target="_blank" title="Watch"><svg class="ic"><use href="#i-play"/></svg></a><% } %>
+            <form method="POST" action="/admin/settings/tutorials/<%= t.id %>/delete" class="inline" data-confirm="Delete this tutorial?">
+              <button class="icon-btn danger" title="Delete"><svg class="ic"><use href="#i-trash"/></svg></button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      <% }); %>
+      <% if (!tutorials || !tutorials.length) { %>
+      <tr><td colspan="4"><div class="empty">No tutorials yet.</div></td></tr>
+      <% } %>
+    </tbody>
+  </table>
+</div>
+
+<%- include('../../partials/footer') %>

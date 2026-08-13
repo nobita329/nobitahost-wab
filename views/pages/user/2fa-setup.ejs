@@ -1,0 +1,32 @@
+<%- include('../../partials/head', { title: '2FA Setup' }) %>
+
+<div class="row">
+  <div class="col-6 col-md-10 col-sm-12" style="margin:0 auto">
+    <div class="card">
+      <div class="card-head"><h2><svg class="ic"><use href="#i-lock"/></svg> Setup Two-Factor Authentication</h2></div>
+      <div class="card-body">
+        <ol class="steps">
+          <li><b>1.</b> Install an authenticator app (Google Authenticator, Authy, Microsoft Authenticator).</li>
+          <li><b>2.</b> Scan the QR code below or enter the secret manually.</li>
+          <li><b>3.</b> Enter the 6-digit code to confirm.</li>
+        </ol>
+
+        <div class="qr-box">
+          <img src="<%= qr %>" alt="2FA QR Code">
+          <code class="secret"><%= secret %></code>
+          <button class="btn btn-ghost btn-sm" id="copySecret">Copy Secret</button>
+        </div>
+
+        <form method="POST" action="/profile/2fa/enable" class="form">
+          <input type="hidden" name="secret" value="<%= secret %>">
+          <div class="field"><label>Verification Code</label>
+            <input class="otp-input" type="text" name="code" maxlength="6" inputmode="numeric" placeholder="000000" required>
+          </div>
+          <button class="btn btn-accent btn-block" type="submit">Enable 2FA</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../../partials/footer') %>

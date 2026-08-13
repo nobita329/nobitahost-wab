@@ -1,0 +1,28 @@
+<%- include('../../partials/head', { title: 'About' }) %>
+
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-head">
+        <h2><svg class="ic"><use href="#i-info"/></svg> About</h2>
+        <% if (isAdmin) { %>
+        <button class="btn btn-accent btn-sm" type="button" onclick="document.getElementById('aboutEdit').hidden = !document.getElementById('aboutEdit').hidden">✏️ Edit About</button>
+        <% } %>
+      </div>
+      <div class="card-body content-area"><%- page.content %></div>
+      <% if (isAdmin) { %>
+      <div class="card-body" id="aboutEdit" hidden>
+        <% if (query.saved) { %><div class="alert alert-success">About page saved.</div><% } %>
+        <form method="POST" action="/about/update" class="form">
+          <div class="field"><label>About Content <small>(HTML allowed)</small></label>
+            <textarea name="content" rows="16" class="mono"><%= page.content %></textarea>
+          </div>
+          <button class="btn btn-accent" type="submit">Save About</button>
+        </form>
+      </div>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<%- include('../../partials/footer') %>

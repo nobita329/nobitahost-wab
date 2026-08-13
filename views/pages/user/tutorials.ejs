@@ -1,0 +1,104 @@
+<%- include('../../partials/head', { title: 'Tutorials' }) %>
+
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-head"><h2><svg class="ic"><use href="#i-book"/></svg> Tutorials</h2></div>
+      <div class="card-body content-area"><%- page.content %></div>
+    </div>
+  </div>
+</div>
+
+<% if (yt && yt.channel) { %>
+<div class="row">
+  <div class="col-12">
+    <div class="card yt-hero">
+      <div class="yt-hero-inner">
+        <a class="yt-avatar xl" href="https://www.youtube.com/@<%= yt.channel.handle %>" target="_blank" rel="noopener">
+          <% if (yt.channel.thumb) { %><img src="<%= yt.channel.thumb %>" alt=""><% } else { %>▶<% } %>
+        </a>
+        <div class="yt-hero-meta">
+          <h2><%= yt.channel.title %></h2>
+          <span class="badge badge-accent"><%= yt.channel.handle ? '@' + yt.channel.handle : '' %></span>
+        </div>
+        <div class="yt-stats">
+          <div class="yt-stat"><b><%= yt.channel.subscribers ? fmt(yt.channel.subscribers) : '—' %></b><span>Subscribers</span></div>
+          <div class="yt-stat"><b><%= yt.channel.views != null ? fmt(yt.channel.views) : '—' %></b><span>Views</span></div>
+          <div class="yt-stat"><b><%= yt.channel.likes != null ? fmt(yt.channel.likes) : '—' %></b><span>Likes</span></div>
+          <div class="yt-stat"><b><%= yt.channel.videoCount ? fmt(yt.channel.videoCount) : yt.videos.length %></b><span>Videos</span></div>
+        </div>
+        <a class="btn btn-accent" href="https://www.youtube.com/@<%= yt.channel.handle %>?sub_confirmation=1" target="_blank" rel="noopener"><svg class="ic"><use href="#i-play"/></svg> Subscribe</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<% if (!yt.error) { %>
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-head"><h2><svg class="ic"><use href="#i-play"/></svg> Latest Videos</h2></div>
+      <div class="card-body">
+        <div class="yt-grid">
+          <% (yt.videos || []).forEach(function(v){ %>
+          <a class="yt-video" href="https://www.youtube.com/watch?v=<%= v.id %>" target="_blank" rel="noopener">
+            <div class="yt-thumb">
+              <img src="<%= v.thumb %>" alt="" loading="lazy">
+              <span class="yt-play"><svg class="ic"><use href="#i-play"/></svg></span>
+            </div>
+            <div class="yt-video-body">
+              <h3><%= v.title %></h3>
+              <div class="yt-video-meta">
+                <span><%= v.views != null ? fmt(v.views) + ' views' : '—' %></span>
+                <span><%= v.likes != null ? '♥ ' + fmt(v.likes) : '' %></span>
+                <% if (v.published) { %><span><%= new Date(v.published).toLocaleDateString() %></span><% } %>
+              </div>
+            </div>
+          </a>
+          <% }); %>
+        </div>
+        <% if (yt.videos && !yt.videos.length) { %>
+        <div class="empty">No videos found.</div>
+        <% } %>
+        <div class="hint center mt">Showing <b><%= yt.videos.length %></b> videos <% if (!yt.channel.videoCount || yt.channel.videoCount > yt.videos.length) { %>(latest <%= yt.videos.length %>)<% } %></div>
+      </div>
+    </div>
+  </div>
+</div>
+<% } else { %>
+<div class="alert alert-error"><%= yt.error %></div>
+<% } %>
+<% } %>
+
+<div class="row">
+  <% (tutorials || []).forEach(function(t){ %>
+  <div class="col-4 col-md-6 col-sm-12">
+    <div class="card t-card">
+      <div class="t-thumb">
+        <% if (t.video_url && /youtu\.be|youtube\.com/.test(t.video_url)) { %>
+          <img src="https://i.ytimg.com/vi/<%= t.video_url.match(/(?:v=|youtu\.be\/|\/embed\/)([\w-]{6,})/)[1] %>/hqdefault.jpg" alt="" loading="lazy">
+        <% } else if (t.thumbnail) { %>
+          <img src="<%= t.thumbnail %>" alt="" loading="lazy">
+        <% } else { %>
+          <div class="t-thumb-ph"><svg class="ic"><use href="#i-play"/></svg></div>
+        <% } %>
+        <span class="t-play"><svg class="ic"><use href="#i-play"/></svg></span>
+      </div>
+      <div class="t-body">
+        <h3><%= t.title %></h3>
+        <p><%= t.description %></p>
+        <div class="t-meta">
+          <% if (t.video_url) { %><a class="btn btn-accent btn-sm" href="<%= t.video_url %>" target="_blank" rel="noopener">Watch</a><% } %>
+          <span class="badge">by <%= t.author || 'Admin' %></span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <% }); %>
+</div>
+
+<% if (!tutorials || !tutorials.length) { %>
+<div class="card"><div class="empty">No tutorials yet. Admin can add them from <b>Settings → Tutorials</b>.</div></div>
+<% } %>
+
+<%- include('../../partials/footer') %>

@@ -1,0 +1,156 @@
+<%- include('../../partials/head', { title: 'GitHub' }) %>
+
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-head"><h2><svg class="ic"><use href="#i-github"/></svg> GitHub</h2></div>
+      <div class="card-body content-area"><%- page.content %></div>
+    </div>
+  </div>
+</div>
+
+<% if (isAdmin) { %>
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-head">
+        <h2><svg class="ic"><use href="#i-pencil"/></svg> Manage GitHub Users</h2>
+        <button class="btn btn-accent btn-sm" type="button" id="githubAddBtn"><svg class="ic"><use href="#i-plus"/></svg> Add GitHub User</button>
+      </div>
+      <div class="card-body">
+        <% if (query.saved) { %><div class="alert alert-success">GitHub user saved.</div><% } %>
+        <% if (query.deleted) { %><div class="alert alert-success">GitHub user deleted.</div><% } %>
+        <% if (query.error === 'username') { %><div class="alert alert-error">Username is required.</div><% } %>
+        <form method="POST" action="/github/add" class="form" id="githubAddForm" hidden>
+          <div class="form-row">
+            <div class="field"><label>GitHub Username</label><input type="text" name="username" required placeholder="e.g. nobita"></div>
+            <div class="field"><label>Profile URL</label><input type="url" name="url" placeholder="https://github.com/…"></div>
+          </div>
+          <div class="field"><label>Note <small>(optional)</small></label><input type="text" name="note" placeholder="e.g. Founder & Lead Developer"></div>
+          <button class="btn btn-accent" type="submit">Save GitHub User</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<% } %>
+
+<% if (isAdmin) { %>
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-head"><h2><svg class="ic"><use href="#i-github"/></svg> GitHub API Settings</h2></div>
+      <div class="card-body">
+        <% if (query.apikey) { %><div class="alert alert-success">GitHub API settings saved.</div><% } %>
+        <form method="POST" action="/github/api-settings" class="form">
+          <div class="form-row">
+            <div class="field"><label>Main GitHub Username <small>(auto-detect repos)</small></label>
+              <input type="text" name="github_username" value="<%= ghConfigured ? settings.github_username : '' %>" placeholder="e.g. nobita329"></div>
+            <div class="field"><label>Personal Access Token <small>(optional, higher rate limit)</small></label>
+              <input type="password" name="github_token" placeholder="ghp_… (leave blank to keep current)" autocomplete="off"></div>
+          </div>
+          <button class="btn btn-accent" type="submit">Save API Settings</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<% } %>
+
+<div class="row">
+  <% (github || []).forEach(function(g){ %>
+  <div class="col-3 col-md-6 col-sm-12">
+    <div class="github-card-wrap">
+      <a class="github-card" href="<%= g.url || 'https://github.com/' + g.username %>" target="_blank" rel="noopener">
+        <img class="github-avatar" src="https://github.com/<%= g.username %>.png?size=120" alt="<%= g.username %>" loading="lazy" onerror="this.outerHTML='<span class=&quot;github-avatar gh-fallback&quot;><svg class=&quot;ic&quot;><use href=&quot;#i-github&quot;/></svg></span>'">
+        <div class="github-meta">
+          <h3>@<%= g.username %></h3>
+          <% if (g.note) { %><p><%= g.note %></p><% } %>
+          <span class="github-follow">Follow <svg class="ic"><use href="#i-chevron-right"/></svg></span>
+        </div>
+      </a>
+      <% if (isAdmin) { %>
+      <div class="link-actions">
+        <button class="icon-btn" type="button" data-toggle-edit="<%= g.id %>" title="Edit"><svg class="ic"><use href="#i-pencil"/></svg></button>
+        <form method="POST" action="/github/<%= g.id %>/delete" onsubmit="return confirm('Delete this GitHub user?')">
+          <button class="icon-btn danger" type="submit" title="Delete"><svg class="ic"><use href="#i-trash"/></svg></button>
+        </form>
+      </div>
+      <form method="POST" action="/github/<%= g.id %>/edit" class="link-edit" id="githubEdit-<%= g.id %>" hidden>
+        <div class="field"><label>Username</label><input type="text" name="username" value="<%= g.username %>"></div>
+        <div class="field"><label>Profile URL</label><input type="url" name="url" value="<%= g.url %>"></div>
+        <div class="field"><label>Note</label><input type="text" name="note" value="<%= g.note %>"></div>
+        <button class="btn btn-accent btn-sm" type="submit">Save</button>
+        <button class="btn btn-ghost btn-sm" type="button" data-toggle-edit="<%= g.id %>">Cancel</button>
+      </form>
+      <% } %>
+    </div>
+  </div>
+  <% }); %>
+</div>
+
+<% if (!github || !github.length) { %>
+<div class="card"><div class="empty">No GitHub users yet. <% if (isAdmin) { %>Click <b>Add GitHub User</b> above to add one.<% } else { %>Check back soon.<% } %></div></div>
+<% } %>
+
+<% if (ghConfigured) { %>
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-head"><h2><svg class="ic"><use href="#i-github"/></svg> GitHub Stats <span class="hint">live</span></h2></div>
+      <div class="card-body">
+        <% if (stats) { %>
+        <div class="gh-stats">
+          <div class="gh-stat"><span>⭐ Stars</span><b><%= stats.stars %></b></div>
+          <div class="gh-stat"><span>⑂ Forks</span><b><%= stats.forks %></b></div>
+          <div class="gh-stat"><span>👀 Watchers</span><b><%= stats.watchers %></b></div>
+          <div class="gh-stat"><span>⚠️ Open Issues</span><b><%= stats.issues %></b></div>
+          <div class="gh-stat"><span>📁 Repos</span><b><%= stats.repos %></b></div>
+          <div class="gh-stat"><span>👥 Followers</span><b><%= stats.followers %></b></div>
+        </div>
+        <% } else if (statsError) { %>
+        <div class="alert alert-error">Could not fetch GitHub stats — <%= statsError %></div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-head"><h2><svg class="ic"><use href="#i-github"/></svg> Repositories <span class="hint">auto-detected</span></h2></div>
+      <div class="card-body">
+        <% (reposByUser || []).forEach(function(u){ %>
+        <% if (u.error) { %>
+        <div class="alert alert-error">Could not fetch repos for <b>@<%= u.username %></b> — <%= u.error %></div>
+        <% } else if (u.repos.length) { %>
+        <div class="repo-user">
+          <img class="repo-avatar" src="https://github.com/<%= u.username %>.png?size=60" alt="" loading="lazy">
+          <div><b>@<%= u.username %></b><span class="hint"><%= u.repos.length %> repositories</span></div>
+        </div>
+        <div class="repo-grid">
+          <% u.repos.forEach(function(r){ %>
+          <a class="repo-card" href="<%= r.html_url %>" target="_blank" rel="noopener">
+            <h3><svg class="ic"><use href="#i-folder"/></svg> <%= r.name %></h3>
+            <% if (r.description) { %><p><%= r.description %></p><% } %>
+            <div class="repo-meta">
+              <% if (r.language) { %><span class="badge"><%= r.language %></span><% } %>
+              <span>⭐ <%= r.stars %></span>
+              <span>⑂ <%= r.forks %></span>
+            </div>
+          </a>
+          <% }); %>
+        </div>
+        <% } %>
+        <% }); %>
+        <% if (reposByUser.every(function(u){ return !u.repos.length && !u.error; })) { %>
+        <div class="empty">No repositories found.</div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+<% } %>
+
+<%- include('../../partials/footer') %>

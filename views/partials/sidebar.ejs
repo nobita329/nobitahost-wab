@@ -1,0 +1,62 @@
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-inner">
+    <a class="brand" href="/">
+      <% if (settings.logo_type === 'url' && settings.logo_url) { %>
+        <img class="brand-logo" src="<%= settings.logo_url %>" alt="logo" onerror="this.parentNode.innerHTML='<span class=&quot;brand-logo brand-emoji&quot;><%= settings.logo_emoji %></span>'">
+      <% } else { %>
+        <span class="brand-logo brand-emoji"><%= settings.logo_emoji %></span>
+      <% } %>
+      <span class="brand-text">
+        <b><%= settings.panel_name %></b>
+        <small><%= settings.panel_tagline %></small>
+      </span>
+    </a>
+
+    <nav class="nav">
+      <% if (user && user.role === 'admin') { %>
+      <div class="nav-sec">Admin Dashboard</div>
+      <a class="nav-item <%= active === 'admin' ? 'active' : '' %>" href="/admin"><svg class="ic"><use href="#i-gauge"/></svg> Dashboard</a>
+      <a class="nav-item <%= active === 'admin-create' ? 'active' : '' %>" href="/admin/create"><svg class="ic"><use href="#i-user-plus"/></svg> Create</a>
+      <a class="nav-item <%= active === 'admin-users' ? 'active' : '' %>" href="/admin/users"><svg class="ic"><use href="#i-users"/></svg> User Management</a>
+      <a class="nav-item <%= active === 'admin-settings' ? 'active' : '' %>" href="/admin/settings"><svg class="ic"><use href="#i-sliders"/></svg> Settings</a>
+      <a class="nav-item <%= active === 'admin-content' ? 'active' : '' %>" href="/admin/settings/content"><svg class="ic"><use href="#i-file"/></svg> Content</a>
+      <a class="nav-item <%= active === 'admin-tutorials' ? 'active' : '' %>" href="/admin/settings/tutorials"><svg class="ic"><use href="#i-play"/></svg> Tutorials</a>
+      <a class="nav-item <%= active === 'admin-activity' ? 'active' : '' %>" href="/admin/activity"><svg class="ic"><use href="#i-activity"/></svg> Activity Log</a>
+      <% } %>
+
+      <div class="nav-sec"><%= user && user.role === 'admin' ? 'User Dashboard' : 'Dashboard' %></div>
+      <a class="nav-item <%= active === 'home' ? 'active' : '' %>" href="/"><svg class="ic"><use href="#i-home"/></svg> Home</a>
+      <a class="nav-item <%= active === 'team' ? 'active' : '' %>" href="/team"><svg class="ic"><use href="#i-users"/></svg> Team</a>
+      <a class="nav-item <%= active === 'tutorials' ? 'active' : '' %>" href="/tutorials"><svg class="ic"><use href="#i-book"/></svg> Tutorials</a>
+      <a class="nav-item <%= active === 'command' ? 'active' : '' %>" href="/command"><svg class="ic"><use href="#i-terminal"/></svg> Command</a>
+      <a class="nav-item <%= active === 'analytics' ? 'active' : '' %>" href="/analytics"><svg class="ic"><use href="#i-chart"/></svg> Analytics</a>
+      <a class="nav-item <%= active === 'projects' ? 'active' : '' %>" href="/projects"><svg class="ic"><use href="#i-folder"/></svg> Projects</a>
+      <a class="nav-item <%= active === 'links' ? 'active' : '' %>" href="/links"><svg class="ic"><use href="#i-link"/></svg> Links</a>
+      <a class="nav-item <%= active === 'github' ? 'active' : '' %>" href="/github"><svg class="ic"><use href="#i-github"/></svg> GitHub</a>
+      <a class="nav-item <%= active === 'about' ? 'active' : '' %>" href="/about"><svg class="ic"><use href="#i-info"/></svg> About</a>
+      <% (navPages || []).forEach(function(p){ %>
+      <a class="nav-item <%= active === p.slug ? 'active' : '' %>" href="/page/<%= p.slug %>"><span class="nav-emoji"><%= p.icon %></span> <%= p.title %></a>
+      <% }); %>
+      <a class="nav-item <%= active === 'activity' ? 'active' : '' %>" href="/activity"><svg class="ic"><use href="#i-clock"/></svg> Activity</a>
+
+      <% if (user) { %>
+      <div class="nav-sec">Account</div>
+      <a class="nav-item <%= active === 'profile' ? 'active' : '' %>" href="/profile"><svg class="ic"><use href="#i-user"/></svg> My Profile</a>
+      <a class="nav-item" href="/logout"><svg class="ic"><use href="#i-logout"/></svg> Logout</a>
+      <% } %>
+    </nav>
+  </div>
+
+  <div class="sidebar-footer">
+    <% if (user) { %>
+    <div class="sf-user">
+      <img class="avatar sm" src="<%= user.profile_pic || '/img/avatar.svg' %>" alt="">
+      <div class="sf-meta">
+        <b><%= user.username %></b>
+        <span class="badge <%= user.role === 'admin' ? 'gold' : '' %>"><%= user.role %></span>
+      </div>
+    </div>
+    <% } %>
+  </div>
+</aside>
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
