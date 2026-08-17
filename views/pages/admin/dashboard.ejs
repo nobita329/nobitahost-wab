@@ -25,25 +25,99 @@
   <div class="col-3 col-md-6 col-sm-12"><div class="card stat-card"><div class="stat-icon accent4"><svg class="ic"><use href="#i-gauge"/></svg></div><div class="stat-meta"><b><%= stats.admins %></b><span>Admins</span></div></div></div>
 </div>
 
+<% if (sys) { %>
 <div class="row">
-  <div class="col-6 col-md-12">
+  <div class="col-12">
     <div class="card">
-      <div class="card-head"><h2><svg class="ic"><use href="#i-chart"/></svg> Traffic · Last 7 Days</h2></div>
+      <div class="card-head"><h2><svg class="ic"><use href="#i-gauge"/></svg> Server Monitoring</h2></div>
       <div class="card-body">
-        <% var dayTotals = {}; last7.forEach(function(r){ dayTotals[r.date] = (dayTotals[r.date] || 0) + r.hits; }); var dayList = Object.keys(dayTotals).slice(-7); var maxDay = Math.max(1, ...Object.values(dayTotals)); %>
-        <div class="bar-chart">
-          <% dayList.forEach(function(d){ %>
-            <div class="bar-col" title="<%= d %> — <%= dayTotals[d] %> views">
-              <div class="bar-track"><div class="bar" style="height:<%= Math.round(dayTotals[d]/maxDay*100) %>%"></div></div>
-              <span class="bar-label"><%= d.slice(5) %></span>
+        <div class="row">
+          <div class="col-4 col-md-6 col-sm-12">
+            <div class="monitor-ring-card">
+              <div class="monitor-ring">
+                <svg viewBox="0 0 120 120">
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="10"/>
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="var(--accent1)" stroke-width="10" stroke-dasharray="326.7" stroke-dashoffset="<%= 326.7 - (326.7 * sys.cpu.usage / 100) %>" stroke-linecap="round" transform="rotate(-90 60 60)" class="ring-progress"/>
+                </svg>
+                <span class="ring-value"><%= sys.cpu.usage %>%</span>
+              </div>
+              <div class="monitor-ring-label">CPU Usage</div>
+              <div class="monitor-ring-sub"><%= sys.cpu.cores %> cores · <%= sys.cpu.freq %> MHz</div>
             </div>
-          <% }); %>
-          <% if (!dayList.length) { %><div class="empty">No traffic yet.</div><% } %>
+          </div>
+          <div class="col-4 col-md-6 col-sm-12">
+            <div class="monitor-ring-card">
+              <div class="monitor-ring">
+                <svg viewBox="0 0 120 120">
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="10"/>
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="var(--accent2)" stroke-width="10" stroke-dasharray="326.7" stroke-dashoffset="<%= 326.7 - (326.7 * sys.mem.usage / 100) %>" stroke-linecap="round" transform="rotate(-90 60 60)" class="ring-progress"/>
+                </svg>
+                <span class="ring-value"><%= sys.mem.usage %>%</span>
+              </div>
+              <div class="monitor-ring-label">Memory</div>
+              <div class="monitor-ring-sub"><%= sys.mem.usedStr %> / <%= sys.mem.totalStr %></div>
+            </div>
+          </div>
+          <div class="col-4 col-md-6 col-sm-12">
+            <div class="monitor-ring-card">
+              <div class="monitor-ring">
+                <svg viewBox="0 0 120 120">
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="10"/>
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="var(--accent3)" stroke-width="10" stroke-dasharray="326.7" stroke-dashoffset="<%= 326.7 - (326.7 * sys.disk.usage / 100) %>" stroke-linecap="round" transform="rotate(-90 60 60)" class="ring-progress"/>
+                </svg>
+                <span class="ring-value"><%= sys.disk.usage %>%</span>
+              </div>
+              <div class="monitor-ring-label">Disk</div>
+              <div class="monitor-ring-sub"><%= sys.disk.usedStr %> / <%= sys.disk.totalStr %></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row mt-16">
+          <div class="col-3 col-md-6 col-sm-12"><div class="monitor-mini"><span class="monitor-mini-label">Uptime</span><span class="monitor-mini-val"><%= sys.uptimeStr %></span></div></div>
+          <div class="col-3 col-md-6 col-sm-12"><div class="monitor-mini"><span class="monitor-mini-label">Load Average</span><span class="monitor-mini-val"><%= sys.cpu.load[0] %></span></div></div>
+          <div class="col-3 col-md-6 col-sm-12"><div class="monitor-mini"><span class="monitor-mini-label">Processes</span><span class="monitor-mini-val"><%= sys.health.processes %></span></div></div>
+          <div class="col-3 col-md-6 col-sm-12"><div class="monitor-mini"><span class="monitor-mini-label">Connections</span><span class="monitor-mini-val"><%= sys.network.connections %></span></div></div>
+        </div>
+        <div class="row mt-16">
+          <div class="col-3 col-md-6 col-sm-12"><div class="monitor-mini"><span class="monitor-mini-label">Net ↓ / ↑</span><span class="monitor-mini-val"><%= sys.network.rxRateStr %> / <%= sys.network.txRateStr %></span></div></div>
+          <div class="col-3 col-md-6 col-sm-12"><div class="monitor-mini"><span class="monitor-mini-label">Disk I/O</span><span class="monitor-mini-val"><%= sys.disk.ioReadStr %> / <%= sys.disk.ioWriteStr %></span></div></div>
+          <div class="col-3 col-md-6 col-sm-12"><div class="monitor-mini"><span class="monitor-mini-label">Temperature</span><span class="monitor-mini-val"><%= sys.health.tempStr %></span></div></div>
+          <div class="col-3 col-md-6 col-sm-12"><div class="monitor-mini"><span class="monitor-mini-label">Platform</span><span class="monitor-mini-val"><%= sys.platform %> (<%= sys.arch %>)</span></div></div>
+        </div>
+        <div class="row mt-16">
+          <div class="col-3 col-md-6 col-sm-12"><div class="monitor-mini"><span class="monitor-mini-label">Hostname</span><span class="monitor-mini-val"><%= sys.hostname %></span></div></div>
+          <div class="col-3 col-md-6 col-sm-12"><div class="monitor-mini"><span class="monitor-mini-label">Boot Time</span><span class="monitor-mini-val"><%= sys.bootTimeStr %></span></div></div>
+          <div class="col-3 col-md-6 col-sm-12"><div class="monitor-mini"><span class="monitor-mini-label">Health Score</span><span class="monitor-mini-val" style="color: <%= sys.health.score >= 70 ? 'var(--accent2)' : sys.health.score >= 40 ? 'var(--accent3)' : 'var(--accent)' %>"><%= sys.health.score %>/100</span></div></div>
+          <div class="col-3 col-md-6 col-sm-12"><div class="monitor-mini"><span class="monitor-mini-label">Node.js</span><span class="monitor-mini-val"><%= process.version %></span></div></div>
         </div>
       </div>
     </div>
   </div>
-  <div class="col-6 col-md-12">
+</div>
+<% } %>
+
+<div class="row">
+  <div class="col-3 col-md-6 col-sm-12"><div class="card stat-card"><div class="stat-icon accent2"><svg class="ic"><use href="#i-chart"/></svg></div><div class="stat-meta"><b id="td-views">0</b><span>Views Today</span></div></div></div>
+  <div class="col-3 col-md-6 col-sm-12"><div class="card stat-card"><div class="stat-icon accent1"><svg class="ic"><use href="#i-users"/></svg></div><div class="stat-meta"><b id="td-visitors">0</b><span>Visitors Today</span></div></div></div>
+  <div class="col-3 col-md-6 col-sm-12"><div class="card stat-card"><div class="stat-icon accent3"><svg class="ic"><use href="#i-chart"/></svg></div><div class="stat-meta"><b id="td-hits">0</b><span>Hits Today</span></div></div></div>
+  <div class="col-3 col-md-6 col-sm-12"><div class="card stat-card"><div class="stat-icon accent4"><svg class="ic"><use href="#i-users"/></svg></div><div class="stat-meta"><b id="td-total-uniques">0</b><span>Total Unique Visitors</span></div></div></div>
+</div>
+
+<div class="row">
+  <div class="col-8 col-md-12">
+    <div class="card">
+      <div class="card-head"><h2><svg class="ic"><use href="#i-chart"/></svg> Traffic · Last 7 Days <small id="traffic-live-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent2);margin-left:8px;animation:pulse-dot 2s infinite"></small></h2></div>
+      <div class="card-body">
+        <div id="traffic-chart" class="bar-chart" style="height:200px"><div class="empty">Loading traffic...</div></div>
+        <div id="traffic-legend" style="display:none;margin-top:8px;font-size:12px;color:var(--muted);display:flex;gap:16px">
+          <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--accent);margin-right:4px"></span> Page Views</span>
+          <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--accent2);margin-right:4px"></span> Unique Visitors</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-4 col-md-12">
     <div class="card">
       <div class="card-head"><h2><svg class="ic"><use href="#i-clock"/></svg> Recent Activity</h2></div>
       <div class="card-body feed">
@@ -60,5 +134,168 @@
     </div>
   </div>
 </div>
+
+<div class="row">
+  <div class="col-6 col-md-12">
+    <div class="card">
+      <div class="card-head"><h2><svg class="ic"><use href="#i-chart"/></svg> Top Pages</h2></div>
+      <div class="card-body" style="padding:0">
+        <div id="top-pages" style="padding:20px"><div class="empty">Loading...</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-12">
+    <div class="card">
+      <div class="card-head"><h2><svg class="ic"><use href="#i-chart"/></svg> Top Referrers</h2></div>
+      <div class="card-body" style="padding:0">
+        <div id="top-referrers" style="padding:20px"><div class="empty">Loading...</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-6 col-md-12">
+    <div class="card">
+      <div class="card-head"><h2><svg class="ic"><use href="#i-chart"/></svg> Hourly Traffic Today</h2></div>
+      <div class="card-body">
+        <div id="hourly-chart" class="bar-chart" style="height:140px"><div class="empty">Loading...</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-12">
+    <div class="card">
+      <div class="card-head"><h2><svg class="ic"><use href="#i-clock"/></svg> Live Page Views</h2></div>
+      <div class="card-body feed" id="recent-views" style="max-height:220px"><div class="empty">Loading...</div></div>
+    </div>
+  </div>
+</div>
+
+<style>
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.3}}
+.tv-row{display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid var(--border);font-size:13px}
+.tv-row:last-child{border-bottom:none}
+.tv-row .tv-page{flex:1;font-weight:600;color:var(--text)}
+.tv-row .tv-views{color:var(--accent);font-weight:700;min-width:50px;text-align:right}
+.tv-row .tv-visitors{color:var(--muted);min-width:50px;text-align:right}
+.tv-bar{height:4px;border-radius:2px;background:var(--accent);transition:width .6s ease}
+.rv-item{display:flex;align-items:center;gap:10px;padding:7px 14px;border-bottom:1px solid var(--border);font-size:12px}
+.rv-item:last-child{border-bottom:none}
+.rv-item .rv-page{font-weight:600;color:var(--accent)}
+.rv-item .rv-ip{color:var(--muted);font-family:monospace;font-size:11px}
+.rv-item .rv-time{margin-left:auto;color:var(--muted);flex:none}
+</style>
+
+<script>
+(function(){
+  var POLL_MS = 8000;
+  var chart = document.getElementById('traffic-chart');
+  var hourlyChart = document.getElementById('hourly-chart');
+  var topPages = document.getElementById('top-pages');
+  var topRefs = document.getElementById('top-referrers');
+  var recentViews = document.getElementById('recent-views');
+  var legend = document.getElementById('traffic-legend');
+
+  function fmt(n){ return n >= 1000 ? (n/1000).toFixed(1)+'k' : String(n); }
+
+  function render7Day(data){
+    if(!data||!data.length){ chart.innerHTML='<div class="empty">No traffic yet. Visit your pages to start tracking.</div>'; return; }
+    var maxV=Math.max(1,...data.map(function(d){return d.views}));
+    var maxVi=Math.max(1,...data.map(function(d){return d.visitors}));
+    var maxM=Math.max(maxV,maxVi);
+    var h='';
+    data.forEach(function(d){
+      var vh=Math.round(d.views/maxM*100);
+      var vih=Math.round(d.visitors/maxM*100);
+      h+='<div class="bar-col" title="'+d.date+' — '+d.views+' views, '+d.visitors+' visitors">';
+      h+='<div class="bar-track" style="display:flex;align-items:flex-end;gap:3px">';
+      h+='<div class="bar" style="height:'+vh+'%;flex:1;background:var(--accent)"></div>';
+      h+='<div class="bar" style="height:'+vih+'%;flex:1;background:var(--accent2)"></div>';
+      h+='</div>';
+      h+='<span class="bar-label">'+d.date.slice(5)+'</span>';
+      h+='</div>';
+    });
+    chart.innerHTML=h;
+    legend.style.display='flex';
+  }
+
+  function renderHourly(data){
+    if(!data||!data.length){ hourlyChart.innerHTML='<div class="empty">No views yet today.</div>'; return; }
+    var hours={};
+    for(var i=0;i<24;i++) hours[String(i).padStart(2,'0')]={views:0,visitors:0};
+    data.forEach(function(d){ if(hours[d.hour]){hours[d.hour].views=d.views;hours[d.hour].visitors=d.visitors;} });
+    var keys=Object.keys(hours);
+    var maxV=Math.max(1,...keys.map(function(k){return hours[k].views}));
+    var h='';
+    keys.forEach(function(k){
+      var v=hours[k].views;
+      var vh=Math.round(v/maxV*100);
+      h+='<div class="bar-col" title="'+k+':00 — '+v+' views">';
+      h+='<div class="bar-track"><div class="bar" style="height:'+Math.max(vh,2)+'%"></div></div>';
+      h+='<span class="bar-label">'+k+'</span>';
+      h+='</div>';
+    });
+    hourlyChart.innerHTML=h;
+  }
+
+  function renderPages(data){
+    if(!data||!data.length){ topPages.innerHTML='<div class="empty">No data yet.</div>'; return; }
+    var max=Math.max(1,data[0].views);
+    var h='';
+    data.forEach(function(d){
+      var pct=Math.round(d.views/max*100);
+      h+='<div class="tv-row"><span class="tv-page">'+esc(d.page)+'</span><span class="tv-views">'+d.views+'</span><span class="tv-visitors">'+d.visitors+' u</span></div>';
+      h+='<div style="padding:0 14px 8px"><div class="tv-bar" style="width:'+pct+'%"></div></div>';
+    });
+    topPages.innerHTML=h;
+  }
+
+  function renderRefs(data){
+    if(!data||!data.length){ topRefs.innerHTML='<div class="empty">No referrer data yet.</div>'; return; }
+    var max=Math.max(1,data[0].views);
+    var h='';
+    data.forEach(function(d){
+      var pct=Math.round(d.views/max*100);
+      h+='<div class="tv-row"><span class="tv-page">'+esc(d.source)+'</span><span class="tv-views">'+d.views+'</span><span class="tv-visitors">'+d.visitors+' u</span></div>';
+      h+='<div style="padding:0 14px 8px"><div class="tv-bar" style="width:'+pct+'%;background:var(--accent2)"></div></div>';
+    });
+    topRefs.innerHTML=h;
+  }
+
+  function renderRecentViews(data){
+    if(!data||!data.length){ recentViews.innerHTML='<div class="empty">No views recorded yet. Start browsing your site to see live data.</div>'; return; }
+    var h='';
+    data.forEach(function(d){
+      var time=d.created_at?d.created_at.replace('T',' ').slice(11,19):'';
+      h+='<div class="rv-item"><span class="rv-page">'+esc(d.page)+'</span><span class="rv-ip">'+esc(d.ip||'—')+'</span><span class="rv-time">'+time+'</span></div>';
+    });
+    recentViews.innerHTML=h;
+  }
+
+  function esc(s){ var d=document.createElement('div');d.textContent=s;return d.innerHTML; }
+
+  function update(d){
+    document.getElementById('td-views').textContent=fmt(d.todayViews);
+    document.getElementById('td-visitors').textContent=fmt(d.todayUniques);
+    document.getElementById('td-hits').textContent=fmt(d.todayHits);
+    document.getElementById('td-total-uniques').textContent=fmt(d.totalUniques);
+    render7Day(d.last7);
+    renderHourly(d.hourly);
+    renderPages(d.pages);
+    renderRefs(d.referrers);
+    renderRecentViews(d.recentViews);
+  }
+
+  function poll(){
+    fetch('/traffic-data',{credentials:'same-origin'})
+      .then(function(r){return r.json()})
+      .then(function(d){if(d.ok)update(d)})
+      .catch(function(){});
+  }
+
+  poll();
+  setInterval(poll,POLL_MS);
+})();
+</script>
 
 <%- include('../../partials/footer') %>

@@ -1,0 +1,78 @@
+<%- include('../../partials/head', { title: doc.title }) %>
+
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-head">
+        <h2><svg class="ic"><use href="#i-file"/></svg> <%= doc.title %></h2>
+        <div class="head-actions">
+          <a class="btn btn-ghost btn-sm" href="/docs"><svg class="ic"><use href="#i-chevron-left"/></svg> Back</a>
+          <% if (typeof isAdmin !== 'undefined' && isAdmin) { %>
+          <button class="btn btn-accent btn-sm" type="button" id="docEditBtn"><svg class="ic"><use href="#i-pencil"/></svg> Edit</button>
+          <% } %>
+        </div>
+      </div>
+      <div class="card-body">
+        <% if (query && query.saved) { %><div class="alert alert-success">Document updated.</div><% } %>
+
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;align-items:center">
+          <% if (doc.category) { %><span class="badge"><%= doc.category %></span><% } %>
+          <span class="badge <%= doc.status === 'published' ? 'green' : 'gold' %>"><%= doc.status %></span>
+          <% if (doc.tags) { doc.tags.split(',').forEach(function(t){ t = t.trim(); if (t) { %><span class="badge"><%= t %></span><% } }); } %>
+          <small style="color:var(--muted)">by <%= doc.author || 'Unknown' %> &middot; <%= doc.updated_at %></small>
+        </div>
+
+        <% if (doc.description) { %>
+        <p style="color:var(--muted);margin-bottom:16px"><%= doc.description %></p>
+        <% } %>
+
+        <div class="content-area"><%- doc.content.replace(/\n/g, '<br>') %></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<% if (typeof isAdmin !== 'undefined' && isAdmin) { %>
+<div class="row" id="docEditSection" hidden>
+  <div class="col-12">
+    <div class="card">
+      <div class="card-head">
+        <h2><svg class="ic"><use href="#i-pencil"/></svg> Edit Document</h2>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="/docs/<%= doc.id %>/edit" class="form">
+          <div class="form-row">
+            <div class="field"><label>Title</label><input type="text" name="title" value="<%= doc.title %>"></div>
+            <div class="field"><label>Category</label><input type="text" name="category" value="<%= doc.category %>"></div>
+          </div>
+          <div class="field"><label>Description</label><input type="text" name="description" value="<%= doc.description %>"></div>
+          <div class="field"><label>Content</label><textarea name="content" rows="12"><%= doc.content %></textarea></div>
+          <div class="form-row">
+            <div class="field"><label>Tags</label><input type="text" name="tags" value="<%= doc.tags %>" placeholder="Comma separated"></div>
+            <div class="field"><label>Status</label>
+              <select name="status">
+                <option value="published" <%= doc.status === 'published' ? 'selected' : '' %>>Published</option>
+                <option value="draft" <%= doc.status === 'draft' ? 'selected' : '' %>>Draft</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-accent" type="submit">Save Changes</button>
+          <button class="btn btn-ghost" type="button" id="docCancelEdit">Cancel</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<% } %>
+
+<script>
+(function(){
+  var btn = document.getElementById('docEditBtn');
+  var sec = document.getElementById('docEditSection');
+  var cancel = document.getElementById('docCancelEdit');
+  if (btn && sec) btn.addEventListener('click', function(){ sec.hidden = false; sec.scrollIntoView({behavior:'smooth'}); });
+  if (cancel && sec) cancel.addEventListener('click', function(){ sec.hidden = true; });
+})();
+</script>
+
+<%- include('../../partials/footer') %>

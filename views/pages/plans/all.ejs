@@ -1,0 +1,78 @@
+<%- include('../../partials/head', { title: 'All Plans' }) %>
+
+<% if (query && query.saved) { %><div class="alert alert-success">Plan saved.</div><% } %>
+<% if (query && query.deleted) { %><div class="alert alert-success">Plan deleted.</div><% } %>
+<% if (query && query.error) { %><div class="alert alert-error"><%= query.error %></div><% } %>
+
+<div class="card table-card">
+  <div class="card-head">
+    <h2><svg class="ic"><use href="#i-folder"/></svg> All Plans <small class="badge"><%= total %></small></h2>
+    <div class="head-actions">
+      <form method="GET" action="/plans/all" class="search-form">
+        <input type="text" name="q" placeholder="Search plans..." value="<%= q || '' %>">
+      </form>
+      <a class="btn btn-accent btn-sm" href="/plans/add"><svg class="ic"><use href="#i-plus"/></svg> Add Plan</a>
+    </div>
+  </div>
+  <div class="card-body">
+    <% if (catFilter) { %><div style="margin-bottom:12px"><a class="btn btn-ghost btn-sm" href="/plans/all?q=<%= q || '' %>">Clear filter: <%= catFilter %> x</a></div><% } %>
+    <div style="overflow-x:auto">
+    <table>
+      <thead>
+        <tr>
+          <th>Plan Name</th>
+          <th>Category</th>
+          <th>Price</th>
+          <th>Billing</th>
+          <th>Subscribers</th>
+          <th>Status</th>
+          <th>Created</th>
+          <th class="ta-r">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% plans.forEach(function(p){ %>
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="width:8px;height:8px;border-radius:50%;background:<%= p.badge_color || 'var(--accent)' %>"></div>
+              <div>
+                <b><%= p.name %></b>
+                <% if (p.popular) { %><span class="badge gold" style="margin-left:4px">Popular</span><% } %>
+              </div>
+            </div>
+          </td>
+          <td><% if (p.category_name) { %><span class="badge"><%= p.category_name %></span><% } else { %><span style="color:var(--muted)">-</span><% } %></td>
+          <td><b><%= settings.plan_currency || '$' %><%= p.price.toFixed(2) %></b></td>
+          <td><span class="badge"><%= p.billing %></span></td>
+          <td><%= p.sub_count || 0 %></td>
+          <td><span class="badge <%= p.status === 'active' ? 'green' : 'red' %>"><%= p.status %></span></td>
+          <td><small style="color:var(--muted)"><%= p.created_at %></small></td>
+          <td class="ta-r">
+            <div class="row-actions">
+              <a class="icon-btn" href="/plans/all?view=<%= p.id %>" title="View"><svg class="ic"><use href="#i-eye"/></svg></a>
+              <a class="icon-btn" href="/plans/edit/<%= p.id %>" title="Edit"><svg class="ic"><use href="#i-pencil"/></svg></a>
+              <form method="POST" action="/plans/<%= p.id %>/delete" onsubmit="return confirm('Delete this plan?')" class="inline">
+                <button class="icon-btn danger" type="submit" title="Delete"><svg class="ic"><use href="#i-trash"/></svg></button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        <% }); %>
+        <% if (!plans.length) { %>
+        <tr><td colspan="8" class="empty">No plans found. <a href="/plans/add">Create one</a>.</td></tr>
+        <% } %>
+      </tbody>
+    </table>
+    </div>
+    <% if (totalPages > 1) { %>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:16px">
+      <% if (page > 1) { %><a class="btn btn-ghost btn-sm" href="/plans/all?page=<%= page - 1 %>&q=<%= q || '' %>">Prev</a><% } %>
+      <span style="line-height:32px;color:var(--muted)">Page <%= page %> of <%= totalPages %></span>
+      <% if (page < totalPages) { %><a class="btn btn-ghost btn-sm" href="/plans/all?page=<%= page + 1 %>&q=<%= q || '' %>">Next</a><% } %>
+    </div>
+    <% } %>
+  </div>
+</div>
+
+<%- include('../../partials/footer') %>

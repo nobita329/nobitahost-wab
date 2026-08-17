@@ -1,0 +1,65 @@
+<%- include('../../partials/head', { title: 'Subscribers' }) %>
+
+<% if (query && query.saved) { %><div class="alert alert-success">Subscriber updated.</div><% } %>
+<% if (query && query.deleted) { %><div class="alert alert-success">Subscriber removed.</div><% } %>
+
+<div class="card table-card">
+  <div class="card-head">
+    <h2><svg class="ic"><use href="#i-users"/></svg> Subscribers <small class="badge"><%= total %></small></h2>
+    <div class="head-actions">
+      <form method="GET" action="/plans/subscribers" class="search-form">
+        <input type="text" name="q" placeholder="Search subscribers..." value="<%= q || '' %>">
+      </form>
+    </div>
+  </div>
+  <div class="card-body">
+    <div style="overflow-x:auto">
+    <table>
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Plan</th>
+          <th>Start Date</th>
+          <th>Expiry Date</th>
+          <th>Status</th>
+          <th class="ta-r">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% subscribers.forEach(function(s){ %>
+        <tr>
+          <td><b><%= s.username || 'User #' + s.user_id %></b></td>
+          <td><span class="badge"><%= s.plan_name %></span></td>
+          <td><small><%= s.start_date %></small></td>
+          <td><small><%= s.expiry_date || 'Lifetime' %></small></td>
+          <td><span class="badge <%= s.status === 'active' ? 'green' : s.status === 'expired' ? 'red' : 'gold' %>"><%= s.status %></span></td>
+          <td class="ta-r">
+            <div class="row-actions">
+              <form method="POST" action="/plans/subscribers/<%= s.id %>/status" class="inline">
+                <input type="hidden" name="status" value="<%= s.status === 'active' ? 'expired' : 'active' %>">
+                <button class="icon-btn warn" type="submit" title="<%= s.status === 'active' ? 'Expire' : 'Activate' %>"><svg class="ic"><use href="#i-shield"/></svg></button>
+              </form>
+              <form method="POST" action="/plans/subscribers/<%= s.id %>/delete" onsubmit="return confirm('Remove this subscriber?')" class="inline">
+                <button class="icon-btn danger" type="submit" title="Remove"><svg class="ic"><use href="#i-trash"/></svg></button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        <% }); %>
+        <% if (!subscribers.length) { %>
+        <tr><td colspan="6" class="empty">No subscribers yet.</td></tr>
+        <% } %>
+      </tbody>
+    </table>
+    </div>
+    <% if (totalPages > 1) { %>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:16px">
+      <% if (page > 1) { %><a class="btn btn-ghost btn-sm" href="/plans/subscribers?page=<%= page - 1 %>&q=<%= q || '' %>">Prev</a><% } %>
+      <span style="line-height:32px;color:var(--muted)">Page <%= page %> of <%= totalPages %></span>
+      <% if (page < totalPages) { %><a class="btn btn-ghost btn-sm" href="/plans/subscribers?page=<%= page + 1 %>&q=<%= q || '' %>">Next</a><% } %>
+    </div>
+    <% } %>
+  </div>
+</div>
+
+<%- include('../../partials/footer') %>

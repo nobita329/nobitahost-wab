@@ -12,6 +12,7 @@ const { getYouTubeData } = require('../youtube');
 const { getRepos: getGithubRepos, getUserStats: getGithubStats } = require('../github');
 const { getSocialData } = require('../social');
 const { CATEGORIES, fetchWallpapers, getCategoryLabel } = require('../wallpapers');
+const { isValidEmail, isValidUsername } = require('../validate');
 
 const router = express.Router();
 const CONTENT_SLUGS = ['home', 'team', 'tutorials', 'command', 'analytics', 'projects', 'links', 'github', 'about'];
@@ -31,11 +32,20 @@ function saveFavs(favs) {
   setSetting('wallpaper_favs', JSON.stringify(favs));
 }
 
+const BOT_RE = /bot|crawl|spider|slurp|archiver|wget|curl|python|java|perl|ruby|go-http|scrapy|headless|phantom|lighthouse|pagespeed|semrush|ahrefs|mj12bot|dotbot|bingbot|yandex|googlebot|applebot|facebookexternalhit|twitterbot|linkedinbot|pinterestbot|discordbot|slackbot|telegrambot| whatsapp|signal|skype|zoom|teams|slack|mattermost|ciscoumbot|hubspot|drift|intercom|zendesk|freshdesk|crisp|tawk|olark|livechat|tidio|convertkit|mailchimp|sendgrid|postmark|mandrill|sparkpost|mailgun|ses\b/i;
+
 function track(page) {
   return (req, res, next) => {
     try {
-      db.prepare('INSERT INTO analytics (page, date, hits) VALUES (?, date("now"), 1) ON CONFLICT(page, date) DO UPDATE SET hits = hits + 1').run(page);
-    } catch (e) { /* noop */ }
+      db.prepare(`INSERT INTO analytics (page, date, hits) VALUES (?, date('now'), 1) ON CONFLICT(page, date) DO UPDATE SET hits = hits + 1`).run(page);
+      const ip = req.headers['x-forwarded-for'] ? req.headers['x-forwarded-for'].split(',')[0].trim() : (req.ip || req.connection.remoteAddress || '').replace('::ffff:', '');
+      const ua = (req.headers['user-agent'] || '').slice(0, 500);
+      const ref = (req.headers['referer'] || req.headers['referrer'] || '').slice(0, 500);
+      const userId = req.user ? req.user.id : null;
+      if (!BOT_RE.test(ua)) {
+        db.prepare(`INSERT INTO page_views (page, ip, user_agent, referrer, user_id, created_at) VALUES (?, ?, ?, ?, ?, datetime('now'))`).run(page, ip, ua, ref, userId);
+      }
+    } catch (e) { console.error('[track]', page, e.message); }
     next();
   };
 }
@@ -101,7 +111,9 @@ router.get('/tutorials', track('tutorials'), async (req, res) => {
 
 router.get('/command', track('command'), (req, res) => {
   const cp = getUserPage('command');
-  pageView(req, res, 'pages/user/command', { title: 'Command', active: 'command', page: cp });
+  const { CATEGORIES, COMMANDS } = require('../commands');
+  const cmdData = JSON.stringify(COMMANDS).replace(/<\//g, '<\\/');
+  pageView(req, res, 'pages/user/command', { title: 'Command', active: 'command', page: cp, cmdData, catCounts: CATEGORIES });
 });
 
 router.get('/analytics', track('analytics'), (req, res) => {
@@ -127,6 +139,25 @@ router.get('/system-data', (req, res) => {
 
 router.get('/system-history', (req, res) => {
   res.json({ success: true, history: getHistory(req.query.range || '24h') });
+});
+
+router.get('/traffic-data', requireAdmin, (req, res) => {
+  try {
+    const todayHits = db.prepare("SELECT COALESCE(SUM(hits),0) c FROM analytics WHERE date = date('now')").get().c;
+    const totalHits = db.prepare('SELECT COALESCE(SUM(hits),0) c FROM analytics').get().c;
+    const todayUniques = db.prepare("SELECT COUNT(DISTINCT ip) c FROM page_views WHERE date(created_at) = date('now')").get().c;
+    const totalUniques = db.prepare('SELECT COUNT(DISTINCT ip) c FROM page_views').get().c;
+    const todayViews = db.prepare("SELECT COUNT(*) c FROM page_views WHERE date(created_at) = date('now')").get().c;
+    const totalViews = db.prepare('SELECT COUNT(*) c FROM page_views').get().c;
+    const last7 = db.prepare("SELECT date(created_at) AS date, COUNT(*) AS views, COUNT(DISTINCT ip) AS visitors FROM page_views WHERE date(created_at) >= date('now', '-6 day') GROUP BY date(created_at) ORDER BY date(created_at)").all();
+    const pages = db.prepare("SELECT page, COUNT(*) AS views, COUNT(DISTINCT ip) AS visitors FROM page_views WHERE date(created_at) >= date('now', '-6 day') GROUP BY page ORDER BY views DESC LIMIT 10").all();
+    const referrers = db.prepare("SELECT CASE WHEN referrer = '' THEN 'Direct' ELSE CASE WHEN referrer LIKE '%google%' THEN 'Google' WHEN referrer LIKE '%facebook%' OR referrer LIKE '%fb.com%' THEN 'Facebook' WHEN referrer LIKE '%twitter%' OR referrer LIKE '%x.com%' THEN 'Twitter' WHEN referrer LIKE '%instagram%' THEN 'Instagram' WHEN referrer LIKE '%youtube%' THEN 'YouTube' WHEN referrer LIKE '%reddit%' THEN 'Reddit' WHEN referrer LIKE '%github%' THEN 'GitHub' WHEN referrer LIKE '%t.me%' OR referrer LIKE '%telegram%' THEN 'Telegram' WHEN referrer LIKE '%discord%' THEN 'Discord' WHEN referrer LIKE '%linkedin%' THEN 'LinkedIn' WHEN referrer LIKE '%pinterest%' THEN 'Pinterest' WHEN referrer LIKE '%tiktok%' THEN 'TikTok' ELSE substr(referrer, 1, 40) END END AS source, COUNT(*) AS views, COUNT(DISTINCT ip) AS visitors FROM page_views WHERE date(created_at) >= date('now', '-6 day') GROUP BY source ORDER BY views DESC LIMIT 10").all();
+    const hourly = db.prepare("SELECT strftime('%H', created_at) AS hour, COUNT(*) AS views, COUNT(DISTINCT ip) AS visitors FROM page_views WHERE date(created_at) = date('now') GROUP BY hour ORDER BY hour").all();
+    const recentViews = db.prepare("SELECT id, page, ip, substr(user_agent, 1, 80) AS ua, substr(referrer, 1, 60) AS ref, created_at FROM page_views ORDER BY created_at DESC LIMIT 15").all();
+    res.json({ ok: true, todayHits, totalHits, todayUniques, totalUniques, todayViews, totalViews, last7, pages, referrers, hourly, recentViews });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
 });
 
 router.get('/projects', track('projects'), (req, res) => {
@@ -196,8 +227,15 @@ router.get('/page/:slug', (req, res) => {
   }
   if (CONTENT_SLUGS.includes(slug)) return res.redirect('/' + slug);
   try {
-    db.prepare('INSERT INTO analytics (page, date, hits) VALUES (?, date("now"), 1) ON CONFLICT(page, date) DO UPDATE SET hits = hits + 1').run('page:' + slug);
-  } catch (e) { /* noop */ }
+    db.prepare(`INSERT INTO analytics (page, date, hits) VALUES (?, date('now'), 1) ON CONFLICT(page, date) DO UPDATE SET hits = hits + 1`).run('page:' + slug);
+    const ip = req.headers['x-forwarded-for'] ? req.headers['x-forwarded-for'].split(',')[0].trim() : (req.ip || req.connection.remoteAddress || '').replace('::ffff:', '');
+    const ua = (req.headers['user-agent'] || '').slice(0, 500);
+    const ref = (req.headers['referer'] || req.headers['referrer'] || '').slice(0, 500);
+    const userId = req.user ? req.user.id : null;
+    if (!BOT_RE.test(ua)) {
+      db.prepare(`INSERT INTO page_views (page, ip, user_agent, referrer, user_id, created_at) VALUES (?, ?, ?, ?, ?, datetime('now'))`).run('page:' + slug, ip, ua, ref, userId);
+    }
+  } catch (e) { console.error('[track:page]', slug, e.message); }
   pageView(req, res, 'pages/user/custom-page', { title: page.title, active: slug, page });
 });
 
@@ -269,7 +307,10 @@ router.get('/profile/2fa/setup', requireAuth, async (req, res) => {
 
 router.post('/team/create', requireAdmin, (req, res) => {
   const { username, email, password, custom_role_id } = req.body;
-  if (!username || !email || !password || password.length < 6) return res.redirect('/team?error=1');
+  if (!username || !email || !password) return res.redirect('/team?error=1');
+  if (!isValidUsername(username)) return res.redirect('/team?error=invalid_username');
+  if (!isValidEmail(email)) return res.redirect('/team?error=invalid_email');
+  if (password.length < 6) return res.redirect('/team?error=short_password');
   const exists = db.prepare('SELECT id FROM users WHERE username = ? OR email = ?').get(username, email);
   if (exists) return res.redirect('/team?error=exists');
   const roleId = custom_role_id ? Number(custom_role_id) : null;
@@ -359,12 +400,19 @@ router.get('/admin', requireAdmin, (req, res) => {
   const suspended = db.prepare("SELECT COUNT(*) c FROM users WHERE status='suspended'").get().c;
   const admins = db.prepare("SELECT COUNT(*) c FROM users WHERE role='admin'").get().c;
   const tutorials = db.prepare('SELECT COUNT(*) c FROM tutorials').get().c;
+  const docs = db.prepare('SELECT COUNT(*) c FROM docs').get().c;
+  const plans = db.prepare('SELECT COUNT(*) c FROM plans').get().c;
+  const subscribers = db.prepare('SELECT COUNT(*) c FROM subscribers').get().c;
   const todayHits = db.prepare("SELECT COALESCE(SUM(hits),0) c FROM analytics WHERE date = date('now')").get().c;
   const totalHits = db.prepare('SELECT COALESCE(SUM(hits),0) c FROM analytics').get().c;
   const recent = db.prepare('SELECT * FROM activity ORDER BY created_at DESC LIMIT 8').all();
   const last7 = db.prepare("SELECT page, date, SUM(hits) AS hits FROM analytics WHERE date >= date('now','-6 day') GROUP BY page, date ORDER BY date").all();
+  let sys;
+  try { sys = getSystemStats(); } catch (e) { sys = null; }
   pageView(req, res, 'pages/admin/dashboard', {
-    title: 'Admin Dashboard', active: 'admin', stats: { totalUsers, activeUsers, suspended, admins, tutorials, todayHits, totalHits }, recent, last7
+    title: 'Admin Dashboard', active: 'admin',
+    stats: { totalUsers, activeUsers, suspended, admins, tutorials, docs, todayHits, totalHits, plans, subscribers },
+    sys, recent, last7
   });
 });
 
@@ -374,8 +422,17 @@ router.get('/admin/create', requireAdmin, (req, res) => {
 
 router.post('/admin/create', requireAdmin, (req, res) => {
   const { username, email, password, role } = req.body;
-  if (!username || !email || !password || password.length < 6) {
-    return pageView(req, res, 'pages/admin/create', { title: 'Create User', active: 'admin-create', error: 'All fields required, password min 6 chars', success: null });
+  if (!username || !email || !password) {
+    return pageView(req, res, 'pages/admin/create', { title: 'Create User', active: 'admin-create', error: 'All fields are required', success: null });
+  }
+  if (!isValidUsername(username)) {
+    return pageView(req, res, 'pages/admin/create', { title: 'Create User', active: 'admin-create', error: 'Username must be 2-32 chars (letters, numbers, _.-)', success: null });
+  }
+  if (!isValidEmail(email)) {
+    return pageView(req, res, 'pages/admin/create', { title: 'Create User', active: 'admin-create', error: 'Please enter a valid email address (e.g. user@example.com)', success: null });
+  }
+  if (password.length < 6) {
+    return pageView(req, res, 'pages/admin/create', { title: 'Create User', active: 'admin-create', error: 'Password must be at least 6 characters', success: null });
   }
   const exists = db.prepare('SELECT id FROM users WHERE username = ? OR email = ?').get(username, email);
   if (exists) {
@@ -458,7 +515,7 @@ router.post('/admin/settings', requireAdmin, upload.fields([
   upd.background_overlay = b.background_overlay ? 'on' : 'off';
   upd.panel_blur = normalizeBlur(b);
   upd.transparency = b.transparency || '100';
-  upd.theme = b.theme === 'light' ? 'light' : 'dark';
+  upd.theme = ['dark','light','rainbow','neon','sunset','ocean','nature','candy','fire','galaxy','luxury','pastel'].includes(b.theme) ? b.theme : 'dark';
   upd.music_type = b.music_type || 'none';
   upd.music_url = b.music_url || '';
   upd.music_volume = b.music_volume || '40';
@@ -513,7 +570,7 @@ router.post('/admin/settings/api', requireAdmin, (req, res) => {
     const b = req.body || {};
     for (const k of Object.keys(b)) {
       if (!AUTO_SAVE_KEYS.includes(k)) continue;
-      if (k === 'theme') setSetting(k, b[k] === 'light' ? 'light' : 'dark');
+      if (k === 'theme') { const t = String(b[k]); setSetting(k, ['dark','light','rainbow','neon','sunset','ocean','nature','candy','fire','galaxy','luxury','pastel'].includes(t) ? t : 'dark'); }
       else if (k === 'panel_blur') setSetting(k, String(normalizeBlur(b)));
       else if (k === 'transparency') {
         const t = Math.min(100, Math.max(0, parseInt(b[k], 10) || 100));
@@ -609,21 +666,25 @@ router.get('/admin/settings/content', requireAdmin, (req, res) => {
 
 router.post('/admin/settings/content/create', requireAdmin, (req, res) => {
   const { title, slug, icon, content, in_nav } = req.body;
-  if (!title || !slug) return res.redirect('/admin/settings/content?error=create');
-  const cleanSlug = String(slug).toLowerCase().replace(/[^a-z0-9-]/g, '');
-  if (!cleanSlug) return res.redirect('/admin/settings/content?error=create');
+  const cleanTitle = (title || '').trim();
+  if (!cleanTitle || !slug) return res.redirect('/admin/settings/content?error=create');
+  const cleanSlug = String(slug).toLowerCase().replace(/[^a-z0-9-]/g, '').replace(/-{2,}/g, '-').replace(/^-|-$/g, '');
+  if (!cleanSlug || cleanSlug.length > 60) return res.redirect('/admin/settings/content?error=create');
   const exists = db.prepare('SELECT id FROM content_pages WHERE slug = ?').get(cleanSlug);
   if (exists) return res.redirect('/admin/settings/content?error=exists');
   db.prepare('INSERT INTO content_pages (slug, title, content, icon, in_nav, updated_at, updated_by) VALUES (?, ?, ?, ?, ?, datetime(\'now\'), ?)')
-    .run(cleanSlug, title, content || '', icon || '📄', in_nav ? 1 : 0, req.user.id);
+    .run(cleanSlug, cleanTitle, content || '', (icon || '').trim().slice(0, 8) || '📄', in_nav ? 1 : 0, req.user.id);
   logActivity(req.user, `Created custom page "${cleanSlug}"`, req);
   res.redirect('/admin/settings/content?edit=' + cleanSlug + '&created=1');
 });
 
 router.post('/admin/settings/content/:slug', requireAdmin, (req, res) => {
-  const { title, content } = req.body;
-  db.prepare("UPDATE content_pages SET title = ?, content = ?, updated_at = datetime('now'), updated_by = ? WHERE slug = ?")
-    .run(title, content, req.user.id, req.params.slug);
+  const page = db.prepare('SELECT * FROM content_pages WHERE slug = ?').get(req.params.slug);
+  if (!page) return res.redirect('/admin/settings/content');
+  const { title, content, icon, in_nav } = req.body;
+  const cleanTitle = (title || '').trim() || page.title;
+  db.prepare("UPDATE content_pages SET title = ?, content = ?, icon = ?, in_nav = ?, updated_at = datetime('now'), updated_by = ? WHERE slug = ?")
+    .run(cleanTitle, content || '', (icon || '').trim().slice(0, 8) || page.icon || '📄', in_nav ? 1 : 0, req.user.id, req.params.slug);
   logActivity(req.user, `Updated content page "${req.params.slug}"`, req);
   res.redirect('/admin/settings/content?edit=' + req.params.slug + '&saved=1');
 });
@@ -740,6 +801,306 @@ router.post('/projects/:id/delete', requireAdmin, (req, res) => {
   db.prepare('DELETE FROM projects WHERE id = ?').run(target.id);
   logActivity(req.user, `Deleted project "${target.name}"`, req);
   res.redirect('/projects?deleted=1');
+});
+
+/* ---------- PLANS MANAGEMENT ---------- */
+
+router.get('/plans', requireAdmin, track('plans'), (req, res) => {
+  const totalPlans = db.prepare('SELECT COUNT(*) c FROM plans WHERE deleted = 0').get().c;
+  const activePlans = db.prepare("SELECT COUNT(*) c FROM plans WHERE deleted = 0 AND status = 'active'").get().c;
+  const totalSubscribers = db.prepare('SELECT COUNT(*) c FROM subscribers').get().c;
+  const activeSubscribers = db.prepare("SELECT COUNT(*) c FROM subscribers WHERE status = 'active'").get().c;
+  const expiredSubscriptions = db.prepare("SELECT COUNT(*) c FROM subscribers WHERE status = 'expired'").get().c;
+  const totalCoupons = db.prepare('SELECT COUNT(*) c FROM coupons').get().c;
+  const activeCoupons = db.prepare("SELECT COUNT(*) c FROM coupons WHERE status = 'active'").get().c;
+  const monthlyRevenue = db.prepare("SELECT COALESCE(SUM(total),0) c FROM transactions WHERE status = 'completed' AND date(created_at) >= date('now','start of month')").get().c;
+  const totalRevenue = db.prepare("SELECT COALESCE(SUM(total),0) c FROM transactions WHERE status = 'completed'").get().c;
+  const recentTransactions = db.prepare('SELECT * FROM transactions ORDER BY created_at DESC LIMIT 5').all();
+  pageView(req, res, 'pages/plans/dashboard', {
+    title: 'Plans Dashboard', active: 'plans',
+    stats: { totalPlans, activePlans, totalSubscribers, activeSubscribers, expiredSubscriptions, totalCoupons, activeCoupons, monthlyRevenue, totalRevenue },
+    recentTransactions
+  });
+});
+
+router.get('/plans/all', requireAdmin, track('plans'), (req, res) => {
+  const q = (req.query.q || '').trim();
+  const catFilter = (req.query.category || '').trim();
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+  const limit = 15;
+  const offset = (page - 1) * limit;
+  let where = 'WHERE p.deleted = 0';
+  const params = [];
+  if (q) { where += ' AND (p.name LIKE ? OR p.description LIKE ?)'; params.push('%' + q + '%', '%' + q + '%'); }
+  if (catFilter) { where += ' AND pc.name = ?'; params.push(catFilter); }
+  const total = db.prepare('SELECT COUNT(*) c FROM plans p LEFT JOIN plan_categories pc ON pc.id = p.category_id ' + where).get(...params).c;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const plans = db.prepare(`SELECT p.*, pc.name AS category_name, (SELECT COUNT(*) FROM subscribers s WHERE s.plan_id = p.id AND s.status = 'active') AS sub_count FROM plans p LEFT JOIN plan_categories pc ON pc.id = p.category_id ${where} ORDER BY p.sort_order, p.created_at DESC LIMIT ? OFFSET ?`).all(...params, limit, offset);
+  pageView(req, res, 'pages/plans/all', {
+    title: 'All Plans', active: 'plans', plans, q, catFilter, page, totalPages, total, query: req.query
+  });
+});
+
+router.get('/plans/add', requireAdmin, (req, res) => {
+  const categories = db.prepare('SELECT * FROM plan_categories ORDER BY sort_order, id').all();
+  const editing = null;
+  pageView(req, res, 'pages/plans/add', { title: 'Add Plan', active: 'plans', categories, editing, query: req.query });
+});
+
+router.post('/plans/add', requireAdmin, (req, res) => {
+  const { name, category_id, description, price, billing, features, storage_limit, user_limit, api_limit, trial_days, status, badge, badge_color, popular } = req.body;
+  if (!name) return res.redirect('/plans/add?error=Name is required');
+  db.prepare('INSERT INTO plans (name, category_id, description, price, billing, features, storage_limit, user_limit, api_limit, trial_days, status, badge, badge_color, popular) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+    .run(name, category_id || null, description || '', parseFloat(price) || 0, billing || 'monthly', features || '', storage_limit || '', parseInt(user_limit) || 0, api_limit || '', parseInt(trial_days) || 0, status === 'inactive' ? 'inactive' : 'active', badge || '', badge_color || '#3b82f6', popular ? 1 : 0);
+  logActivity(req.user, `Created plan "${name}"`, req);
+  res.redirect('/plans/all?saved=1');
+});
+
+router.get('/plans/edit/:id', requireAdmin, (req, res) => {
+  const editing = db.prepare('SELECT * FROM plans WHERE id = ?').get(req.params.id);
+  if (!editing) return res.redirect('/plans/all');
+  const categories = db.prepare('SELECT * FROM plan_categories ORDER BY sort_order, id').all();
+  pageView(req, res, 'pages/plans/add', { title: 'Edit Plan', active: 'plans', categories, editing, query: req.query });
+});
+
+router.post('/plans/:id/edit', requireAdmin, (req, res) => {
+  const target = db.prepare('SELECT * FROM plans WHERE id = ?').get(req.params.id);
+  if (!target) return res.redirect('/plans/all');
+  const { name, category_id, description, price, billing, features, storage_limit, user_limit, api_limit, trial_days, status, badge, badge_color, popular } = req.body;
+  db.prepare("UPDATE plans SET name=?, category_id=?, description=?, price=?, billing=?, features=?, storage_limit=?, user_limit=?, api_limit=?, trial_days=?, status=?, badge=?, badge_color=?, popular=?, updated_at=datetime('now') WHERE id=?")
+    .run(name || target.name, category_id || null, description != null ? description : target.description, parseFloat(price) || target.price, billing || target.billing, features != null ? features : target.features, storage_limit != null ? storage_limit : target.storage_limit, parseInt(user_limit) || target.user_limit, api_limit != null ? api_limit : target.api_limit, parseInt(trial_days) || target.trial_days, status === 'inactive' ? 'inactive' : 'active', badge != null ? badge : target.badge, badge_color || target.badge_color, popular ? 1 : 0, target.id);
+  logActivity(req.user, `Edited plan "${target.name}"`, req);
+  res.redirect('/plans/all?saved=1');
+});
+
+router.post('/plans/:id/delete', requireAdmin, (req, res) => {
+  const target = db.prepare('SELECT * FROM plans WHERE id = ?').get(req.params.id);
+  if (!target) return res.redirect('/plans/all');
+  db.prepare("UPDATE plans SET deleted = 1, updated_at = datetime('now') WHERE id = ?").run(target.id);
+  logActivity(req.user, `Deleted plan "${target.name}"`, req);
+  res.redirect('/plans/all?deleted=1');
+});
+
+router.post('/plans/:id/restore', requireAdmin, (req, res) => {
+  db.prepare("UPDATE plans SET deleted = 0, updated_at = datetime('now') WHERE id = ?").run(req.params.id);
+  logActivity(req.user, 'Restored a plan', req);
+  res.redirect('/plans/trash?restored=1');
+});
+
+router.post('/plans/:id/permanent-delete', requireAdmin, (req, res) => {
+  db.prepare('DELETE FROM plans WHERE id = ?').run(req.params.id);
+  logActivity(req.user, 'Permanently deleted a plan', req);
+  res.redirect('/plans/trash?permanently=1');
+});
+
+router.get('/plans/trash', requireAdmin, (req, res) => {
+  const plans = db.prepare('SELECT * FROM plans WHERE deleted = 1 ORDER BY updated_at DESC').all();
+  pageView(req, res, 'pages/plans/trash', { title: 'Plans Trash', active: 'plans', plans, query: req.query });
+});
+
+/* ---------- PLAN CATEGORIES ---------- */
+
+router.get('/plans/categories', requireAdmin, (req, res) => {
+  const categories = db.prepare('SELECT pc.*, (SELECT COUNT(*) FROM plans p WHERE p.category_id = pc.id AND p.deleted = 0) AS plan_count FROM plan_categories pc ORDER BY pc.sort_order, pc.id').all();
+  const editing = req.query.edit ? db.prepare('SELECT * FROM plan_categories WHERE id = ?').get(req.query.edit) : null;
+  pageView(req, res, 'pages/plans/categories', { title: 'Plan Categories', active: 'plans', categories, editing, query: req.query });
+});
+
+router.post('/plans/categories/add', requireAdmin, (req, res) => {
+  const { name, description, sort_order } = req.body;
+  if (!name) return res.redirect('/plans/categories?error=Name is required');
+  db.prepare('INSERT INTO plan_categories (name, description, sort_order) VALUES (?, ?, ?)').run(name.trim(), description || '', parseInt(sort_order) || 0);
+  logActivity(req.user, `Created plan category "${name}"`, req);
+  res.redirect('/plans/categories?saved=1');
+});
+
+router.post('/plans/categories/:id/edit', requireAdmin, (req, res) => {
+  const target = db.prepare('SELECT * FROM plan_categories WHERE id = ?').get(req.params.id);
+  if (!target) return res.redirect('/plans/categories');
+  const { name, description, sort_order } = req.body;
+  db.prepare('UPDATE plan_categories SET name = ?, description = ?, sort_order = ? WHERE id = ?')
+    .run((name || target.name).trim(), description != null ? description : target.description, parseInt(sort_order) || target.sort_order, target.id);
+  logActivity(req.user, `Edited plan category "${target.name}"`, req);
+  res.redirect('/plans/categories?saved=1');
+});
+
+router.post('/plans/categories/:id/delete', requireAdmin, (req, res) => {
+  const target = db.prepare('SELECT * FROM plan_categories WHERE id = ?').get(req.params.id);
+  if (!target) return res.redirect('/plans/categories');
+  db.prepare('UPDATE plans SET category_id = NULL WHERE category_id = ?').run(target.id);
+  db.prepare('DELETE FROM plan_categories WHERE id = ?').run(target.id);
+  logActivity(req.user, `Deleted plan category "${target.name}"`, req);
+  res.redirect('/plans/categories?deleted=1');
+});
+
+/* ---------- SUBSCRIBERS ---------- */
+
+router.get('/plans/subscribers', requireAdmin, (req, res) => {
+  const q = (req.query.q || '').trim();
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+  const limit = 15;
+  const offset = (page - 1) * limit;
+  let where = 'WHERE 1=1';
+  const params = [];
+  if (q) { where += ' AND (s.username LIKE ? OR s.plan_name LIKE ?)'; params.push('%' + q + '%', '%' + q + '%'); }
+  const total = db.prepare('SELECT COUNT(*) c FROM subscribers s ' + where).get(...params).c;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const subscribers = db.prepare('SELECT s.* FROM subscribers s ' + where + ' ORDER BY s.created_at DESC LIMIT ? OFFSET ?').all(...params, limit, offset);
+  pageView(req, res, 'pages/plans/subscribers', { title: 'Subscribers', active: 'plans', subscribers, q, page, totalPages, total, query: req.query });
+});
+
+router.post('/plans/subscribers/:id/status', requireAdmin, (req, res) => {
+  const target = db.prepare('SELECT * FROM subscribers WHERE id = ?').get(req.params.id);
+  if (!target) return res.redirect('/plans/subscribers');
+  db.prepare('UPDATE subscribers SET status = ? WHERE id = ?').run(req.body.status || 'active', target.id);
+  logActivity(req.user, `Updated subscriber ${target.username} status to ${req.body.status}`, req);
+  res.redirect('/plans/subscribers?saved=1');
+});
+
+router.post('/plans/subscribers/:id/delete', requireAdmin, (req, res) => {
+  db.prepare('DELETE FROM subscribers WHERE id = ?').run(req.params.id);
+  logActivity(req.user, 'Removed a subscriber', req);
+  res.redirect('/plans/subscribers?deleted=1');
+});
+
+/* ---------- TRANSACTIONS ---------- */
+
+router.get('/plans/transactions', requireAdmin, (req, res) => {
+  const q = (req.query.q || '').trim();
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+  const limit = 20;
+  const offset = (page - 1) * limit;
+  let where = 'WHERE 1=1';
+  const params = [];
+  if (q) { where += ' AND (t.username LIKE ? OR t.plan_name LIKE ?)'; params.push('%' + q + '%', '%' + q + '%'); }
+  const total = db.prepare('SELECT COUNT(*) c FROM transactions t ' + where).get(...params).c;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const transactions = db.prepare('SELECT t.* FROM transactions t ' + where + ' ORDER BY t.created_at DESC LIMIT ? OFFSET ?').all(...params, limit, offset);
+  pageView(req, res, 'pages/plans/transactions', { title: 'Transactions', active: 'plans', transactions, q, page, totalPages, total, query: req.query });
+});
+
+/* ---------- COUPONS ---------- */
+
+router.get('/plans/coupons', requireAdmin, (req, res) => {
+  const coupons = db.prepare('SELECT * FROM coupons ORDER BY created_at DESC').all();
+  const editing = req.query.edit ? db.prepare('SELECT * FROM coupons WHERE id = ?').get(req.query.edit) : null;
+  pageView(req, res, 'pages/plans/coupons', { title: 'Coupons', active: 'plans', coupons, editing, query: req.query });
+});
+
+router.post('/plans/coupons/add', requireAdmin, (req, res) => {
+  const { code, type, value, max_uses, min_amount, expiry_date, status } = req.body;
+  if (!code) return res.redirect('/plans/coupons?error=Code is required');
+  const exists = db.prepare('SELECT id FROM coupons WHERE code = ?').get(code.toUpperCase());
+  if (exists) return res.redirect('/plans/coupons?error=Coupon code already exists');
+  db.prepare('INSERT INTO coupons (code, type, value, max_uses, min_amount, expiry_date, status) VALUES (?, ?, ?, ?, ?, ?, ?)')
+    .run(code.toUpperCase().trim(), type || 'percent', parseFloat(value) || 0, parseInt(max_uses) || 0, parseFloat(min_amount) || 0, expiry_date || '', status === 'inactive' ? 'inactive' : 'active');
+  logActivity(req.user, `Created coupon "${code}"`, req);
+  res.redirect('/plans/coupons?saved=1');
+});
+
+router.post('/plans/coupons/:id/edit', requireAdmin, (req, res) => {
+  const target = db.prepare('SELECT * FROM coupons WHERE id = ?').get(req.params.id);
+  if (!target) return res.redirect('/plans/coupons');
+  const { code, type, value, max_uses, min_amount, expiry_date, status } = req.body;
+  db.prepare('UPDATE coupons SET code=?, type=?, value=?, max_uses=?, min_amount=?, expiry_date=?, status=? WHERE id=?')
+    .run((code || target.code).toUpperCase().trim(), type || target.type, parseFloat(value) || target.value, parseInt(max_uses) != null ? parseInt(max_uses) : target.max_uses, parseFloat(min_amount) || target.min_amount, expiry_date != null ? expiry_date : target.expiry_date, status === 'inactive' ? 'inactive' : 'active', target.id);
+  logActivity(req.user, `Edited coupon "${target.code}"`, req);
+  res.redirect('/plans/coupons?saved=1');
+});
+
+router.post('/plans/coupons/:id/delete', requireAdmin, (req, res) => {
+  const target = db.prepare('SELECT * FROM coupons WHERE id = ?').get(req.params.id);
+  if (!target) return res.redirect('/plans/coupons');
+  db.prepare('DELETE FROM coupons WHERE id = ?').run(target.id);
+  logActivity(req.user, `Deleted coupon "${target.code}"`, req);
+  res.redirect('/plans/coupons?deleted=1');
+});
+
+/* ---------- PLAN SETTINGS ---------- */
+
+router.get('/plans/settings', requireAdmin, (req, res) => {
+  const plans = db.prepare('SELECT * FROM plans WHERE deleted = 0 ORDER BY name').all();
+  pageView(req, res, 'pages/plans/settings', { title: 'Plan Settings', active: 'plans', plans, query: req.query });
+});
+
+router.post('/plans/settings', requireAdmin, (req, res) => {
+  const b = req.body;
+  const upd = {};
+  const keys = ['plan_currency', 'plan_currency_code', 'plan_tax_rate', 'plan_tax_name', 'plan_trial_days', 'plan_default_id', 'plan_stripe_pk', 'plan_stripe_sk', 'plan_razorpay_key', 'plan_razorpay_secret', 'plan_paypal_client', 'plan_paypal_secret'];
+  for (const k of keys) { if (b[k] != null) upd[k] = String(b[k]); }
+  setSettingsMany(upd);
+  logActivity(req.user, 'Updated plan settings', req);
+  res.redirect('/plans/settings?saved=1');
+});
+
+/* ---------- DOCS MANAGEMENT ---------- */
+
+router.get('/docs', track('docs'), (req, res) => {
+  const q = (req.query.q || '').trim();
+  const cat = (req.query.category || '').trim();
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+  const limit = 10;
+  const offset = (page - 1) * limit;
+
+  let where = 'WHERE 1=1';
+  const params = [];
+  if (q) { where += ' AND (d.title LIKE ? OR d.description LIKE ? OR d.tags LIKE ?)'; params.push(`%${q}%`, `%${q}%`, `%${q}%`); }
+  if (cat) { where += ' AND d.category = ?'; params.push(cat); }
+
+  const total = db.prepare(`SELECT COUNT(*) c FROM docs d ${where}`).get(...params).c;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const docs = db.prepare(`SELECT d.*, u.username AS author FROM docs d LEFT JOIN users u ON u.id = d.author_id ${where} ORDER BY d.updated_at DESC LIMIT ? OFFSET ?`).all(...params, limit, offset);
+  const categories = db.prepare('SELECT DISTINCT category FROM docs WHERE category != \'\' ORDER BY category').all().map(r => r.category);
+
+  pageView(req, res, 'pages/user/docs', {
+    title: 'Docs', active: 'docs', docs, q, cat, categories, page, totalPages, total,
+    query: req.query,
+    isAdmin: req.user && req.user.role === 'admin',
+    extraScripts: '<script src="/js/docs.js"></script>'
+  });
+});
+
+router.get('/docs/view/:id', track('docs'), (req, res) => {
+  const doc = db.prepare('SELECT d.*, u.username AS author FROM docs d LEFT JOIN users u ON u.id = d.author_id WHERE d.id = ?').get(req.params.id);
+  if (!doc) return res.redirect('/docs');
+  pageView(req, res, 'pages/user/doc-view', { title: doc.title, active: 'docs', doc, query: req.query });
+});
+
+router.post('/docs/add', requireAdmin, (req, res) => {
+  const { title, description, content, category, tags, status } = req.body;
+  if (!title) return res.redirect('/docs?error=title');
+  db.prepare('INSERT INTO docs (title, description, content, category, tags, status, author_id) VALUES (?, ?, ?, ?, ?, ?, ?)')
+    .run(title, description || '', content || '', (category || '').trim(), (tags || '').trim(), status === 'draft' ? 'draft' : 'published', req.user.id);
+  logActivity(req.user, `Added doc "${title}"`, req);
+  res.redirect('/docs?saved=1');
+});
+
+router.post('/docs/:id/edit', requireAdmin, (req, res) => {
+  const target = db.prepare('SELECT * FROM docs WHERE id = ?').get(req.params.id);
+  if (!target) return res.redirect('/docs');
+  const { title, description, content, category, tags, status } = req.body;
+  db.prepare("UPDATE docs SET title = ?, description = ?, content = ?, category = ?, tags = ?, status = ?, updated_at = datetime('now') WHERE id = ?")
+    .run(title || target.title, description != null ? description : target.description, content != null ? content : target.content, (category != null ? category : target.category || '').trim(), (tags != null ? tags : target.tags || '').trim(), status === 'draft' ? 'draft' : 'published', target.id);
+  logActivity(req.user, `Edited doc "${target.title}"`, req);
+  res.redirect('/docs?edited=1');
+});
+
+router.post('/docs/:id/delete', requireAdmin, (req, res) => {
+  const target = db.prepare('SELECT * FROM docs WHERE id = ?').get(req.params.id);
+  if (!target) return res.redirect('/docs');
+  db.prepare('DELETE FROM docs WHERE id = ?').run(target.id);
+  logActivity(req.user, `Deleted doc "${target.title}"`, req);
+  res.redirect('/docs?deleted=1');
+});
+
+router.post('/docs/bulk-delete', requireAdmin, (req, res) => {
+  const ids = (req.body.ids || '').split(',').map(Number).filter(n => n > 0);
+  if (ids.length) {
+    const placeholders = ids.map(() => '?').join(',');
+    db.prepare(`DELETE FROM docs WHERE id IN (${placeholders})`).run(...ids);
+    logActivity(req.user, `Bulk deleted ${ids.length} doc(s)`, req);
+  }
+  res.redirect('/docs?deleted=1');
 });
 
 module.exports = router;

@@ -152,9 +152,34 @@
         <div class="card-body">
           <div class="field"><label>Theme</label>
             <select name="theme" data-live="theme">
-              <option value="dark" <%= settings.theme !== 'light' ? 'selected' : '' %>>Dark</option>
+              <option value="dark" <%= settings.theme === 'dark' ? 'selected' : '' %>>Dark</option>
               <option value="light" <%= settings.theme === 'light' ? 'selected' : '' %>>Light</option>
+              <option value="rainbow" <%= settings.theme === 'rainbow' ? 'selected' : '' %>>Rainbow</option>
+              <option value="neon" <%= settings.theme === 'neon' ? 'selected' : '' %>>Neon Glow</option>
+              <option value="sunset" <%= settings.theme === 'sunset' ? 'selected' : '' %>>Sunset</option>
+              <option value="ocean" <%= settings.theme === 'ocean' ? 'selected' : '' %>>Ocean</option>
+              <option value="nature" <%= settings.theme === 'nature' ? 'selected' : '' %>>Nature</option>
+              <option value="candy" <%= settings.theme === 'candy' ? 'selected' : '' %>>Candy</option>
+              <option value="fire" <%= settings.theme === 'fire' ? 'selected' : '' %>>Fire</option>
+              <option value="galaxy" <%= settings.theme === 'galaxy' ? 'selected' : '' %>>Galaxy</option>
+              <option value="luxury" <%= settings.theme === 'luxury' ? 'selected' : '' %>>Luxury</option>
+              <option value="pastel" <%= settings.theme === 'pastel' ? 'selected' : '' %>>Pastel</option>
             </select>
+          </div>
+
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 16px">
+            <span class="theme-dot" data-theme="dark" title="Dark" style="width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid <%= settings.theme === 'dark' ? 'var(--accent)' : 'var(--border)' %>;background:#0a0e1a"></span>
+            <span class="theme-dot" data-theme="light" title="Light" style="width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid <%= settings.theme === 'light' ? 'var(--accent)' : 'var(--border)' %>;background:#eef1f7"></span>
+            <span class="theme-dot" data-theme="rainbow" title="Rainbow" style="width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid <%= settings.theme === 'rainbow' ? 'var(--accent)' : 'var(--border)' %>;background:linear-gradient(135deg,#ef4444,#f97316,#eab308,#22c55e,#3b82f6,#8b5cf6)"></span>
+            <span class="theme-dot" data-theme="neon" title="Neon Glow" style="width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid <%= settings.theme === 'neon' ? 'var(--accent)' : 'var(--border)' %>;background:linear-gradient(135deg,#06d6a0,#ec4899)"></span>
+            <span class="theme-dot" data-theme="sunset" title="Sunset" style="width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid <%= settings.theme === 'sunset' ? 'var(--accent)' : 'var(--border)' %>;background:linear-gradient(135deg,#f97316,#ec4899,#8b5cf6)"></span>
+            <span class="theme-dot" data-theme="ocean" title="Ocean" style="width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid <%= settings.theme === 'ocean' ? 'var(--accent)' : 'var(--border)' %>;background:linear-gradient(135deg,#0ea5e9,#14b8a6)"></span>
+            <span class="theme-dot" data-theme="nature" title="Nature" style="width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid <%= settings.theme === 'nature' ? 'var(--accent)' : 'var(--border)' %>;background:linear-gradient(135deg,#22c55e,#a3a33e)"></span>
+            <span class="theme-dot" data-theme="candy" title="Candy" style="width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid <%= settings.theme === 'candy' ? 'var(--accent)' : 'var(--border)' %>;background:linear-gradient(135deg,#f472b6,#93c5fd,#c4b5fd)"></span>
+            <span class="theme-dot" data-theme="fire" title="Fire" style="width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid <%= settings.theme === 'fire' ? 'var(--accent)' : 'var(--border)' %>;background:linear-gradient(135deg,#ef4444,#f97316,#eab308)"></span>
+            <span class="theme-dot" data-theme="galaxy" title="Galaxy" style="width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid <%= settings.theme === 'galaxy' ? 'var(--accent)' : 'var(--border)' %>;background:linear-gradient(135deg,#8b5cf6,#4f46e5,#3b82f6)"></span>
+            <span class="theme-dot" data-theme="luxury" title="Luxury" style="width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid <%= settings.theme === 'luxury' ? 'var(--accent)' : 'var(--border)' %>;background:linear-gradient(135deg,#d4a017,#10b981)"></span>
+            <span class="theme-dot" data-theme="pastel" title="Pastel" style="width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid <%= settings.theme === 'pastel' ? 'var(--accent)' : 'var(--border)' %>;background:linear-gradient(135deg,#f0a0b0,#c4b5fd,#6ee7b7)"></span>
           </div>
 
           <div class="range-row">

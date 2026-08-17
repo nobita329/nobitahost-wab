@@ -6,6 +6,31 @@
 <% if (query.error === 'role') { %><div class="alert alert-error">Role name is required.</div><% } %>
 <% if (query.error === 'roleexists') { %><div class="alert alert-error">That role already exists.</div><% } %>
 
+<% if (user) { %>
+<div class="row">
+  <div class="col-12">
+    <div class="card profile-card me-card">
+      <div class="profile-top">
+        <span class="me-badge"><svg class="ic"><use href="#i-user"/></svg> This is you</span>
+        <img class="avatar xl" src="<%= user.profile_pic || '/img/avatar.svg' %>" alt="">
+        <h3><%= user.username %></h3>
+        <p><%= user.email %></p>
+        <% var myRoleName = user.custom_role || (user.role === 'admin' ? 'Admin' : 'Member'); %>
+        <% var myRoleColor = user.custom_color || (user.role === 'admin' ? '#f59e0b' : '#8b5cf6'); %>
+        <span class="badge" style="background: <%= myRoleColor %>22; color: <%= myRoleColor %>; border: 1px solid <%= myRoleColor %>55;"><%= myRoleName %></span>
+        <span class="badge <%= user.status === 'active' ? 'green' : 'red' %>"><%= user.status %></span>
+      </div>
+      <div class="profile-stats">
+        <div><b><%= user.two_factor_enabled ? 'On' : 'Off' %></b><span>2FA</span></div>
+        <div><b>#<%= user.id %></b><span>User ID</span></div>
+        <div><b><%= user.created_at.slice(0, 10) %></b><span>Joined</span></div>
+        <div><b><%= members.length %></b><span>Members</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+<% } %>
+
 <div class="row">
   <div class="col-12">
     <div class="card">

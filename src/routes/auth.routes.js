@@ -6,6 +6,7 @@ const db = require('../db');
 const { getSettings, resolveBackground } = require('../settings');
 const { signToken, logActivity, COOKIE } = require('../middleware/auth');
 const { sendMail } = require('../mailer');
+const { isValidEmail, isValidUsername } = require('../validate');
 
 const router = express.Router();
 
@@ -45,6 +46,15 @@ router.get('/login/demo', (req, res) => {
 router.post('/login', (req, res) => {
   const { username, password, next } = req.body;
   const redirect = getNext({ query: { next: next || req.query.next || '/' } });
+
+  if (!username || !password) {
+    return renderAuth(res, 'login', { error: 'Please enter username/email and password', next: redirect });
+  }
+
+  if (username.includes('@') && !isValidEmail(username)) {
+    return renderAuth(res, 'login', { error: 'Please enter a valid email address', next: redirect });
+  }
+
   const user = db
     .prepare('SELECT * FROM users WHERE username = ? OR email = ?')
     .get(username, username);
@@ -89,6 +99,8 @@ router.post('/register', (req, res) => {
   }
   const { username, email, password, confirm } = req.body;
   if (!username || !email || !password) return renderAuth(res, 'register', { error: 'All fields are required', success: null });
+  if (!isValidUsername(username)) return renderAuth(res, 'register', { error: 'Username must be 2-32 chars (letters, numbers, _.-)', success: null });
+  if (!isValidEmail(email)) return renderAuth(res, 'register', { error: 'Please enter a valid email address (e.g. user@example.com)', success: null });
   if (password.length < 6) return renderAuth(res, 'register', { error: 'Password must be at least 6 characters', success: null });
   if (password !== confirm) return renderAuth(res, 'register', { error: 'Passwords do not match', success: null });
 

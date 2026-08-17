@@ -1,0 +1,89 @@
+<%- include('../../partials/head', { title: 'Coupons' }) %>
+
+<% if (query && query.saved) { %><div class="alert alert-success">Coupon saved.</div><% } %>
+<% if (query && query.deleted) { %><div class="alert alert-success">Coupon deleted.</div><% } %>
+
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-head">
+        <h2><svg class="ic"><use href="#i-plus"/></svg> <%= editing ? 'Edit Coupon' : 'Create Coupon' %></h2>
+        <% if (editing) { %><a class="btn btn-ghost btn-sm" href="/plans/coupons">Cancel</a><% } %>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="<%= editing ? '/plans/coupons/' + editing.id + '/edit' : '/plans/coupons/add' %>" class="form">
+          <div class="form-row">
+            <div class="field"><label>Code *</label><input type="text" name="code" value="<%= editing ? editing.code : '' %>" required placeholder="e.g. SAVE20" style="text-transform:uppercase"></div>
+            <div class="field"><label>Discount Type</label>
+              <select name="type">
+                <option value="percent" <%= editing && editing.type === 'percent' ? 'selected' : '' %>>Percent (%)</option>
+                <option value="fixed" <%= editing && editing.type === 'fixed' ? 'selected' : '' %>>Fixed Amount</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="field"><label>Value *</label><input type="number" step="0.01" name="value" value="<%= editing ? editing.value : '' %>" required placeholder="e.g. 20"></div>
+            <div class="field"><label>Max Uses <small>(0 = unlimited)</small></label><input type="number" name="max_uses" value="<%= editing ? editing.max_uses : '0' %>"></div>
+          </div>
+          <div class="form-row">
+            <div class="field"><label>Min Amount</label><input type="number" step="0.01" name="min_amount" value="<%= editing ? editing.min_amount : '0' %>" placeholder="0"></div>
+            <div class="field"><label>Expiry Date</label><input type="date" name="expiry_date" value="<%= editing ? editing.expiry_date : '' %>"></div>
+          </div>
+          <div class="field"><label>Status</label>
+            <select name="status">
+              <option value="active" <%= editing && editing.status === 'active' ? 'selected' : '' %>>Active</option>
+              <option value="inactive" <%= editing && editing.status === 'inactive' ? 'selected' : '' %>>Inactive</option>
+            </select>
+          </div>
+          <button class="btn btn-accent" type="submit"><%= editing ? 'Save Changes' : 'Create Coupon' %></button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card table-card" style="margin-top:16px">
+  <div class="card-head"><h2><svg class="ic"><use href="#i-shield"/></svg> All Coupons</h2></div>
+  <div class="card-body">
+    <div style="overflow-x:auto">
+    <table>
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Discount</th>
+          <th>Uses</th>
+          <th>Min Amount</th>
+          <th>Expiry</th>
+          <th>Status</th>
+          <th class="ta-r">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% coupons.forEach(function(c){ %>
+        <tr>
+          <td><b style="font-family:monospace"><%= c.code %></b></td>
+          <td><span class="badge"><%= c.type === 'percent' ? c.value + '%' : (settings.plan_currency || '$') + c.value.toFixed(2) %></span></td>
+          <td><%= c.used_count %><% if (c.max_uses > 0) { %> / <%= c.max_uses %><% } %></td>
+          <td><%= c.min_amount > 0 ? (settings.plan_currency || '$') + c.min_amount.toFixed(2) : '-' %></td>
+          <td><small><%= c.expiry_date || 'Never' %></small></td>
+          <td><span class="badge <%= c.status === 'active' ? 'green' : 'red' %>"><%= c.status %></span></td>
+          <td class="ta-r">
+            <div class="row-actions">
+              <a class="icon-btn" href="/plans/coupons?edit=<%= c.id %>" title="Edit"><svg class="ic"><use href="#i-pencil"/></svg></a>
+              <form method="POST" action="/plans/coupons/<%= c.id %>/delete" onsubmit="return confirm('Delete this coupon?')" class="inline">
+                <button class="icon-btn danger" type="submit" title="Delete"><svg class="ic"><use href="#i-trash"/></svg></button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        <% }); %>
+        <% if (!coupons.length) { %>
+        <tr><td colspan="7" class="empty">No coupons yet. Create one above.</td></tr>
+        <% } %>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</div>
+
+<%- include('../../partials/footer') %>

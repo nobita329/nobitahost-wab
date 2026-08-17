@@ -5,12 +5,27 @@
   <div class="col-12">
     <div class="card">
       <div class="card-head"><h2><svg class="ic"><use href="#i-pencil"/></svg> Edit Page · /<%= editing.slug %></h2>
-        <a class="btn btn-ghost btn-sm" href="/admin/settings/content">← Back to list</a>
+        <div class="head-actions">
+          <a class="btn btn-ghost btn-sm" href="<%= contentSlugs.indexOf(editing.slug) === -1 ? '/page/' + editing.slug : '/' + editing.slug %>" target="_blank"><svg class="ic"><use href="#i-eye"/></svg> View Page</a>
+          <a class="btn btn-ghost btn-sm" href="/admin/settings/content">← Back to list</a>
+        </div>
       </div>
       <div class="card-body">
         <% if (query.saved || query.created) { %><div class="alert alert-success"><%= query.created ? 'Page created.' : 'Page saved.' %></div><% } %>
         <form method="POST" action="/admin/settings/content/<%= editing.slug %>" class="form">
-          <div class="field"><label>Page Title</label><input type="text" name="title" value="<%= editing.title %>"></div>
+          <div class="form-row">
+            <div class="field"><label>Page Title</label><input type="text" name="title" value="<%= editing.title %>" required></div>
+            <div class="field"><label>Icon <small>(emoji)</small></label><input type="text" name="icon" value="<%= editing.icon || '📄' %>" placeholder="📄"></div>
+          </div>
+          <div class="field"><label>Sidebar</label>
+            <div class="switch-row" style="padding: 6px 0">
+              <div>
+                <b>Show in sidebar</b>
+                <small>Adds the page to the navigation</small>
+              </div>
+              <label class="switch"><input type="checkbox" name="in_nav" <%= editing.in_nav ? 'checked' : '' %>><span></span></label>
+            </div>
+          </div>
           <div class="field"><label>Content <small>(HTML allowed)</small></label>
             <textarea name="content" rows="18" class="mono"><%= editing.content %></textarea>
           </div>

@@ -1,0 +1,153 @@
+<%- include('../../partials/head', { title: 'Docs' }) %>
+
+<% if (query && query.saved) { %><div class="alert alert-success">Document saved.</div><% } %>
+<% if (query && query.edited) { %><div class="alert alert-success">Document updated.</div><% } %>
+<% if (query && query.deleted) { %><div class="alert alert-success">Document(s) deleted.</div><% } %>
+<% if (query && query.error === 'title') { %><div class="alert alert-error">Title is required.</div><% } %>
+
+<% if (isAdmin) { %>
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-head">
+        <h2><svg class="ic"><use href="#i-file"/></svg> Add Document</h2>
+        <button class="btn btn-accent btn-sm" type="button" id="docAddBtn"><svg class="ic"><use href="#i-plus"/></svg> New Document</button>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="/docs/add" class="form" id="docAddForm" hidden>
+          <div class="form-row">
+            <div class="field"><label>Title</label><input type="text" name="title" required placeholder="Document title"></div>
+            <div class="field"><label>Category</label><input type="text" name="category" placeholder="e.g. API, Guide, FAQ"></div>
+          </div>
+          <div class="field"><label>Description</label><input type="text" name="description" placeholder="Short description"></div>
+          <div class="field"><label>Content</label><textarea name="content" rows="8" placeholder="Write your document content here..."></textarea></div>
+          <div class="form-row">
+            <div class="field"><label>Tags</label><input type="text" name="tags" placeholder="Comma separated tags"></div>
+            <div class="field"><label>Status</label>
+              <select name="status">
+                <option value="published">Published</option>
+                <option value="draft">Draft</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-accent" type="submit">Save Document</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<% } %>
+
+<div class="row">
+  <div class="col-12">
+    <div class="card table-card">
+      <div class="card-head">
+        <h2><svg class="ic"><use href="#i-file"/></svg> All Documents <small class="badge"><%= total %></small></h2>
+        <div class="head-actions">
+          <% if (isAdmin && docs.length > 0) { %>
+          <form method="POST" action="/docs/bulk-delete" id="bulkDeleteForm" onsubmit="return confirm('Delete selected documents?')">
+            <input type="hidden" name="ids" id="bulkIds">
+            <button class="btn btn-danger btn-sm" type="submit" id="bulkDeleteBtn" disabled><svg class="ic"><use href="#i-trash"/></svg> Delete Selected</button>
+          </form>
+          <% } %>
+          <form method="GET" action="/docs" class="search-form">
+            <input type="text" name="q" placeholder="Search docs..." value="<%= q || '' %>">
+            <% if (cat) { %><input type="hidden" name="category" value="<%= cat %>"><% } %>
+          </form>
+        </div>
+      </div>
+      <div class="card-body">
+        <% if (categories && categories.length > 0) { %>
+        <div class="filter-row" style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap">
+          <a class="btn btn-sm <%= !cat ? 'btn-accent' : 'btn-ghost' %>" href="/docs?q=<%= q || '' %>">All</a>
+          <% categories.forEach(function(c){ %>
+          <a class="btn btn-sm <%= cat === c ? 'btn-accent' : 'btn-ghost' %>" href="/docs?q=<%= q || '' %>&category=<%= encodeURIComponent(c) %>"><%= c %></a>
+          <% }); %>
+        </div>
+        <% } %>
+
+        <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <% if (isAdmin) { %><th style="width:40px"><input type="checkbox" id="checkAll"></th><% } %>
+              <th>Title</th>
+              <th>Category</th>
+              <th>Author</th>
+              <th>Status</th>
+              <th>Updated</th>
+              <th class="ta-r">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% docs.forEach(function(d){ %>
+            <tr>
+              <% if (isAdmin) { %><td><input type="checkbox" class="doc-check" value="<%= d.id %>"></td><% } %>
+              <td>
+                <div>
+                  <b><%= d.title %></b>
+                  <% if (d.description) { %><br><small style="color:var(--muted)"><%= d.description.substring(0, 80) %><%= d.description.length > 80 ? '...' : '' %></small><% } %>
+                </div>
+              </td>
+              <td><% if (d.category) { %><span class="badge"><%= d.category %></span><% } else { %><span style="color:var(--muted)">-</span><% } %></td>
+              <td><%= d.author || '-' %></td>
+              <td><span class="badge <%= d.status === 'published' ? 'green' : 'gold' %>"><%= d.status %></span></td>
+              <td><small style="color:var(--muted)"><%= d.updated_at %></small></td>
+              <td class="ta-r">
+                <div class="row-actions">
+                  <a class="icon-btn" href="/docs/view/<%= d.id %>" title="View"><svg class="ic"><use href="#i-eye"/></svg></a>
+                  <% if (isAdmin) { %>
+                  <button class="icon-btn" type="button" data-toggle-edit="doc<%= d.id %>" title="Edit"><svg class="ic"><use href="#i-pencil"/></svg></button>
+                  <form method="POST" action="/docs/<%= d.id %>/delete" onsubmit="return confirm('Delete this document?')" class="inline">
+                    <button class="icon-btn danger" type="submit" title="Delete"><svg class="ic"><use href="#i-trash"/></svg></button>
+                  </form>
+                  <% } %>
+                </div>
+              </td>
+            </tr>
+            <% if (isAdmin) { %>
+            <tr id="docEdit-doc<%= d.id %>" hidden>
+              <td colspan="6" style="padding:12px">
+                <form method="POST" action="/docs/<%= d.id %>/edit" class="form">
+                  <div class="form-row">
+                    <div class="field"><label>Title</label><input type="text" name="title" value="<%= d.title %>"></div>
+                    <div class="field"><label>Category</label><input type="text" name="category" value="<%= d.category %>"></div>
+                  </div>
+                  <div class="field"><label>Description</label><input type="text" name="description" value="<%= d.description %>"></div>
+                  <div class="field"><label>Content</label><textarea name="content" rows="6"><%= d.content %></textarea></div>
+                  <div class="form-row">
+                    <div class="field"><label>Tags</label><input type="text" name="tags" value="<%= d.tags %>"></div>
+                    <div class="field"><label>Status</label>
+                      <select name="status">
+                        <option value="published" <%= d.status === 'published' ? 'selected' : '' %>>Published</option>
+                        <option value="draft" <%= d.status === 'draft' ? 'selected' : '' %>>Draft</option>
+                      </select>
+                    </div>
+                  </div>
+                  <button class="btn btn-accent btn-sm" type="submit">Save Changes</button>
+                  <button class="btn btn-ghost btn-sm" type="button" data-toggle-edit="doc<%= d.id %>">Cancel</button>
+                </form>
+              </td>
+            </tr>
+            <% } %>
+            <% }); %>
+            <% if (!docs.length) { %>
+            <tr><td colspan="6" class="empty">No documents found. <% if (isAdmin) { %>Click <b>New Document</b> to create one.<% } else { %>Check back soon.<% } %></td></tr>
+            <% } %>
+          </tbody>
+        </table>
+        </div>
+
+        <% if (totalPages > 1) { %>
+        <div class="pagination" style="display:flex;gap:8px;justify-content:center;margin-top:16px">
+          <% if (page > 1) { %><a class="btn btn-ghost btn-sm" href="/docs?page=<%= page - 1 %>&q=<%= q || '' %><%= cat ? '&category=' + encodeURIComponent(cat) : '' %>">Prev</a><% } %>
+          <span style="line-height:32px;color:var(--muted)">Page <%= page %> of <%= totalPages %></span>
+          <% if (page < totalPages) { %><a class="btn btn-ghost btn-sm" href="/docs?page=<%= page + 1 %>&q=<%= q || '' %><%= cat ? '&category=' + encodeURIComponent(cat) : '' %>">Next</a><% } %>
+        </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../../partials/footer') %>

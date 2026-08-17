@@ -21,6 +21,8 @@
       <a class="nav-item <%= active === 'admin-settings' ? 'active' : '' %>" href="/admin/settings"><svg class="ic"><use href="#i-sliders"/></svg> Settings</a>
       <a class="nav-item <%= active === 'admin-content' ? 'active' : '' %>" href="/admin/settings/content"><svg class="ic"><use href="#i-file"/></svg> Content</a>
       <a class="nav-item <%= active === 'admin-tutorials' ? 'active' : '' %>" href="/admin/settings/tutorials"><svg class="ic"><use href="#i-play"/></svg> Tutorials</a>
+      <a class="nav-item <%= active === 'docs' ? 'active' : '' %>" href="/docs"><svg class="ic"><use href="#i-file"/></svg> Docs</a>
+      <a class="nav-item <%= active === 'plans' ? 'active' : '' %>" href="/plans"><svg class="ic"><use href="#i-heart"/></svg> Plans</a>
       <a class="nav-item <%= active === 'admin-activity' ? 'active' : '' %>" href="/admin/activity"><svg class="ic"><use href="#i-activity"/></svg> Activity Log</a>
       <% } %>
 
@@ -33,7 +35,9 @@
       <a class="nav-item <%= active === 'projects' ? 'active' : '' %>" href="/projects"><svg class="ic"><use href="#i-folder"/></svg> Projects</a>
       <a class="nav-item <%= active === 'links' ? 'active' : '' %>" href="/links"><svg class="ic"><use href="#i-link"/></svg> Links</a>
       <a class="nav-item <%= active === 'github' ? 'active' : '' %>" href="/github"><svg class="ic"><use href="#i-github"/></svg> GitHub</a>
+      <a class="nav-item <%= active === 'docs' ? 'active' : '' %>" href="/docs"><svg class="ic"><use href="#i-file"/></svg> Docs</a>
       <a class="nav-item <%= active === 'about' ? 'active' : '' %>" href="/about"><svg class="ic"><use href="#i-info"/></svg> About</a>
+      <a class="nav-item <%= active === 'plans' ? 'active' : '' %>" href="/plans"><svg class="ic"><use href="#i-heart"/></svg> Plans</a>
       <% (navPages || []).forEach(function(p){ %>
       <a class="nav-item <%= active === p.slug ? 'active' : '' %>" href="/page/<%= p.slug %>"><span class="nav-emoji"><%= p.icon %></span> <%= p.title %></a>
       <% }); %>

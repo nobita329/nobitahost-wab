@@ -114,8 +114,23 @@
       theme.addEventListener('change', function () {
         document.documentElement.setAttribute('data-theme', theme.value);
         scheduleSave({ theme: theme.value });
+        document.querySelectorAll('.theme-dot').forEach(function (d) {
+          d.style.borderColor = d.getAttribute('data-theme') === theme.value ? 'var(--accent)' : 'var(--border)';
+        });
       });
     }
+
+    document.querySelectorAll('.theme-dot').forEach(function (dot) {
+      dot.addEventListener('click', function () {
+        var val = dot.getAttribute('data-theme');
+        if (theme) theme.value = val;
+        document.documentElement.setAttribute('data-theme', val);
+        scheduleSave({ theme: val });
+        document.querySelectorAll('.theme-dot').forEach(function (d) {
+          d.style.borderColor = d.getAttribute('data-theme') === val ? 'var(--accent)' : 'var(--border)';
+        });
+      });
+    });
 
     var trans = document.querySelector('[data-live="transparency"]');
     var transVal = document.getElementById('transVal');

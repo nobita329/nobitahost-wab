@@ -1,0 +1,51 @@
+<%- include('../../partials/head', { title: 'Plans Trash' }) %>
+
+<% if (query && query.restored) { %><div class="alert alert-success">Plan restored.</div><% } %>
+<% if (query && query.permanently) { %><div class="alert alert-success">Plan permanently deleted.</div><% } %>
+
+<div class="card table-card">
+  <div class="card-head">
+    <h2><svg class="ic"><use href="#i-trash"/></svg> Trash <small class="badge"><%= plans.length %></small></h2>
+    <a class="btn btn-ghost btn-sm" href="/plans/all">Back to Plans</a>
+  </div>
+  <div class="card-body">
+    <div style="overflow-x:auto">
+    <table>
+      <thead>
+        <tr>
+          <th>Plan Name</th>
+          <th>Price</th>
+          <th>Billing</th>
+          <th>Deleted</th>
+          <th class="ta-r">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% plans.forEach(function(p){ %>
+        <tr>
+          <td><b><%= p.name %></b></td>
+          <td><%= settings.plan_currency || '$' %><%= p.price.toFixed(2) %></td>
+          <td><span class="badge"><%= p.billing %></span></td>
+          <td><small style="color:var(--muted)"><%= p.updated_at %></small></td>
+          <td class="ta-r">
+            <div class="row-actions">
+              <form method="POST" action="/plans/<%= p.id %>/restore" class="inline">
+                <button class="icon-btn" type="submit" title="Restore"><svg class="ic"><use href="#i-shield"/></svg></button>
+              </form>
+              <form method="POST" action="/plans/<%= p.id %>/permanent-delete" onsubmit="return confirm('Permanently delete? This cannot be undone.')" class="inline">
+                <button class="icon-btn danger" type="submit" title="Permanent Delete"><svg class="ic"><use href="#i-trash"/></svg></button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        <% }); %>
+        <% if (!plans.length) { %>
+        <tr><td colspan="5" class="empty">Trash is empty.</td></tr>
+        <% } %>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</div>
+
+<%- include('../../partials/footer') %>

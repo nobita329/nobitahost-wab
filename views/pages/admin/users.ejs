@@ -54,7 +54,7 @@
 <% users.forEach(function(u){ %>
 <div class="modal" id="modalEdit<%= u.id %>">
   <div class="modal-card">
-    <div class="modal-head"><h3>Edit <%= u.username %></h3><button class="icon-btn" data-close=""><svg class="ic"><use href="#i-trash"/></svg></button></div>
+    <div class="modal-head"><h3>Edit <%= u.username %></h3><button class="icon-btn" data-close=""><svg class="ic"><use href="#i-x"/></svg></button></div>
     <form method="POST" action="/admin/users/<%= u.id %>/edit" class="form">
       <div class="field"><label>Username</label><input type="text" name="username" value="<%= u.username %>" required></div>
       <div class="field"><label>Email</label><input type="email" name="email" value="<%= u.email %>" required></div>

@@ -127,6 +127,95 @@ CREATE TABLE IF NOT EXISTS notifications (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+CREATE TABLE IF NOT EXISTS docs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  description TEXT DEFAULT '',
+  content TEXT DEFAULT '',
+  category TEXT DEFAULT '',
+  tags TEXT DEFAULT '',
+  status TEXT DEFAULT 'published',
+  author_id INTEGER,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS plan_categories (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  description TEXT DEFAULT '',
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS plans (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  category_id INTEGER DEFAULT NULL,
+  description TEXT DEFAULT '',
+  price REAL NOT NULL DEFAULT 0,
+  billing TEXT NOT NULL DEFAULT 'monthly',
+  features TEXT DEFAULT '',
+  storage_limit TEXT DEFAULT '',
+  user_limit INTEGER NOT NULL DEFAULT 0,
+  api_limit TEXT DEFAULT '',
+  trial_days INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'active',
+  popular INTEGER NOT NULL DEFAULT 0,
+  badge TEXT DEFAULT '',
+  badge_color TEXT DEFAULT '#3b82f6',
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  deleted INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS subscribers (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER DEFAULT NULL,
+  username TEXT DEFAULT '',
+  plan_id INTEGER DEFAULT NULL,
+  plan_name TEXT DEFAULT '',
+  start_date TEXT NOT NULL DEFAULT (datetime('now')),
+  expiry_date TEXT DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'active',
+  payment_method TEXT DEFAULT '',
+  amount REAL NOT NULL DEFAULT 0,
+  coupon_id INTEGER DEFAULT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS coupons (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  code TEXT NOT NULL,
+  type TEXT NOT NULL DEFAULT 'percent',
+  value REAL NOT NULL DEFAULT 0,
+  max_uses INTEGER NOT NULL DEFAULT 0,
+  used_count INTEGER NOT NULL DEFAULT 0,
+  min_amount REAL NOT NULL DEFAULT 0,
+  expiry_date TEXT DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'active',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS transactions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER DEFAULT NULL,
+  username TEXT DEFAULT '',
+  plan_id INTEGER DEFAULT NULL,
+  plan_name TEXT DEFAULT '',
+  coupon_id INTEGER DEFAULT NULL,
+  coupon_code TEXT DEFAULT '',
+  amount REAL NOT NULL DEFAULT 0,
+  discount REAL NOT NULL DEFAULT 0,
+  tax REAL NOT NULL DEFAULT 0,
+  total REAL NOT NULL DEFAULT 0,
+  payment_method TEXT DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'completed',
+  note TEXT DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS system_stats (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   ts INTEGER NOT NULL,
@@ -137,6 +226,19 @@ CREATE TABLE IF NOT EXISTS system_stats (
   tx REAL NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_system_stats_ts ON system_stats(ts);
+CREATE TABLE IF NOT EXISTS page_views (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  page TEXT NOT NULL,
+  ip TEXT DEFAULT '',
+  user_agent TEXT DEFAULT '',
+  referrer TEXT DEFAULT '',
+  country TEXT DEFAULT '',
+  user_id INTEGER DEFAULT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_page_views_page ON page_views(page);
+CREATE INDEX IF NOT EXISTS idx_page_views_created ON page_views(created_at);
+CREATE INDEX IF NOT EXISTS idx_page_views_ip ON page_views(ip);
 `);
 
 const pageCols = db.pragma('table_info(content_pages)').map((c) => c.name);

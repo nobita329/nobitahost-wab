@@ -1,0 +1,58 @@
+<%- include('../../partials/head', { title: 'Transactions' }) %>
+
+<div class="card table-card">
+  <div class="card-head">
+    <h2><svg class="ic"><use href="#i-chart"/></svg> Transactions <small class="badge"><%= total %></small></h2>
+    <div class="head-actions">
+      <form method="GET" action="/plans/transactions" class="search-form">
+        <input type="text" name="q" placeholder="Search transactions..." value="<%= q || '' %>">
+      </form>
+    </div>
+  </div>
+  <div class="card-body">
+    <div style="overflow-x:auto">
+    <table>
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Plan</th>
+          <th>Amount</th>
+          <th>Discount</th>
+          <th>Tax</th>
+          <th>Total</th>
+          <th>Method</th>
+          <th>Status</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% transactions.forEach(function(t){ %>
+        <tr>
+          <td><b><%= t.username || '-' %></b></td>
+          <td><span class="badge"><%= t.plan_name %></span></td>
+          <td><%= settings.plan_currency || '$' %><%= t.amount.toFixed(2) %></td>
+          <td><% if (t.discount > 0) { %><span class="badge green">-<%= settings.plan_currency || '$' %><%= t.discount.toFixed(2) %></span><% } else { %>-<% } %></td>
+          <td><%= t.tax > 0 ? (settings.plan_currency || '$') + t.tax.toFixed(2) : '-' %></td>
+          <td><b><%= settings.plan_currency || '$' %><%= t.total.toFixed(2) %></b></td>
+          <td><small><%= t.payment_method || '-' %></small></td>
+          <td><span class="badge <%= t.status === 'completed' ? 'green' : t.status === 'refunded' ? 'gold' : 'red' %>"><%= t.status %></span></td>
+          <td><small style="color:var(--muted)"><%= t.created_at %></small></td>
+        </tr>
+        <% }); %>
+        <% if (!transactions.length) { %>
+        <tr><td colspan="9" class="empty">No transactions yet.</td></tr>
+        <% } %>
+      </tbody>
+    </table>
+    </div>
+    <% if (totalPages > 1) { %>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:16px">
+      <% if (page > 1) { %><a class="btn btn-ghost btn-sm" href="/plans/transactions?page=<%= page - 1 %>&q=<%= q || '' %>">Prev</a><% } %>
+      <span style="line-height:32px;color:var(--muted)">Page <%= page %> of <%= totalPages %></span>
+      <% if (page < totalPages) { %><a class="btn btn-ghost btn-sm" href="/plans/transactions?page=<%= page + 1 %>&q=<%= q || '' %>">Next</a><% } %>
+    </div>
+    <% } %>
+  </div>
+</div>
+
+<%- include('../../partials/footer') %>

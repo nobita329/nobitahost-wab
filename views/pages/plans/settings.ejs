@@ -1,0 +1,50 @@
+<%- include('../../partials/head', { title: 'Plan Settings' }) %>
+
+<% if (query && query.saved) { %><div class="alert alert-success">Settings saved.</div><% } %>
+
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-head"><h2><svg class="ic"><use href="#i-sliders"/></svg> Plan Settings</h2></div>
+      <div class="card-body">
+        <form method="POST" action="/plans/settings" class="form">
+          <div class="form-row">
+            <div class="field"><label>Currency Symbol</label><input type="text" name="plan_currency" value="<%= settings.plan_currency || '$' %>" placeholder="$"></div>
+            <div class="field"><label>Currency Code</label><input type="text" name="plan_currency_code" value="<%= settings.plan_currency_code || 'USD' %>" placeholder="USD"></div>
+          </div>
+          <div class="form-row">
+            <div class="field"><label>Tax Rate (%)</label><input type="number" step="0.01" name="plan_tax_rate" value="<%= settings.plan_tax_rate || '0' %>" placeholder="0"></div>
+            <div class="field"><label>Tax Name</label><input type="text" name="plan_tax_name" value="<%= settings.plan_tax_name || 'Tax' %>" placeholder="GST / VAT"></div>
+          </div>
+          <div class="form-row">
+            <div class="field"><label>Free Trial Days</label><input type="number" name="plan_trial_days" value="<%= settings.plan_trial_days || '0' %>" placeholder="0 = no trial"></div>
+            <div class="field"><label>Default Plan</label>
+              <select name="plan_default_id">
+                <option value="">None</option>
+                <% plans.forEach(function(p){ %>
+                <option value="<%= p.id %>" <%= settings.plan_default_id == p.id ? 'selected' : '' %>><%= p.name %></option>
+                <% }); %>
+              </select>
+            </div>
+          </div>
+          <h3 style="margin:20px 0 12px;font-size:16px">Payment Gateways</h3>
+          <div class="form-row">
+            <div class="field"><label>Stripe Public Key</label><input type="text" name="plan_stripe_pk" value="<%= settings.plan_stripe_pk || '' %>" placeholder="pk_..."></div>
+            <div class="field"><label>Stripe Secret Key</label><input type="password" name="plan_stripe_sk" value="<%= settings.plan_stripe_sk || '' %>" placeholder="sk_..."></div>
+          </div>
+          <div class="form-row">
+            <div class="field"><label>Razorpay Key</label><input type="text" name="plan_razorpay_key" value="<%= settings.plan_razorpay_key || '' %>" placeholder="rzp_..."></div>
+            <div class="field"><label>Razorpay Secret</label><input type="password" name="plan_razorpay_secret" value="<%= settings.plan_razorpay_secret || '' %>" placeholder="..."></div>
+          </div>
+          <div class="form-row">
+            <div class="field"><label>PayPal Client ID</label><input type="text" name="plan_paypal_client" value="<%= settings.plan_paypal_client || '' %>" placeholder="..."></div>
+            <div class="field"><label>PayPal Secret</label><input type="password" name="plan_paypal_secret" value="<%= settings.plan_paypal_secret || '' %>" placeholder="..."></div>
+          </div>
+          <button class="btn btn-accent" type="submit">Save Settings</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../../partials/footer') %>

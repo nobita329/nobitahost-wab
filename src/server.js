@@ -14,8 +14,8 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, '..', 'views'));
 app.set('trust proxy', true);
 
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+app.use(express.urlencoded({ extended: true, limit: '5mb' }));
+app.use(express.json({ limit: '5mb' }));
 app.use(cookieParser());
 
 app.use('/uploads', express.static(path.join(__dirname, '..', 'public', 'uploads')));
@@ -23,11 +23,20 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 
 app.use(loadUser);
 
+function ensureErrorLocals(res) {
+  res.locals.settings = res.locals.settings || getSettings();
+  res.locals.normalizeBlur = res.locals.normalizeBlur || (() => 0);
+  res.locals.overlayAlpha = res.locals.overlayAlpha || (() => 0);
+  res.locals.user = res.locals.user || null;
+  res.locals.navPages = res.locals.navPages || [];
+}
+
 app.use((req, res, next) => {
   const s = getSettings();
   if (s.maintenance === 'on' && !req.path.startsWith('/login')) {
     const isAdmin = req.user && req.user.role === 'admin';
     if (!isAdmin) {
+      ensureErrorLocals(res);
       return res.status(503).render('pages/errors/maintenance', { title: 'Maintenance', active: '', bodyClass: 'auth-page', bg: { url: '', type: 'image' } });
     }
   }
@@ -46,12 +55,18 @@ app.use('/', authRoutes);
 app.use('/', webRoutes);
 
 app.use((req, res) => {
+  ensureErrorLocals(res);
   res.status(404).render('pages/errors/404', { title: '404', active: '', bodyClass: 'auth-page', bg: { url: '', type: 'image' } });
 });
 
 app.use((err, req, res, next) => {
   console.error(err);
-  res.status(500).render('pages/errors/500', { title: '500', active: '', bodyClass: 'auth-page', bg: { url: '', type: 'image' } });
+  const status = err.status || err.statusCode || 500;
+  if (req.path.startsWith('/api/')) {
+    return res.status(status).json({ success: false, error: err.message || 'Internal Server Error' });
+  }
+  ensureErrorLocals(res);
+  res.status(status).render('pages/errors/500', { title: String(status), active: '', bodyClass: 'auth-page', bg: { url: '', type: 'image' } });
 });
 
 const PORT = process.env.PORT || 3001;

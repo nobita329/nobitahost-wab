@@ -5,6 +5,7 @@ const db = require('../db');
 const { getSettings, setSettingsMany } = require('../settings');
 const { JWT_SECRET, COOKIE, logActivity } = require('../middleware/auth');
 const { getSystemStats, recordSample, getHistory } = require('../system');
+const { isValidEmail, isValidUsername } = require('../validate');
 
 const router = express.Router();
 const BANNED_PATHS = ['/api/auth/login', '/api/auth/register'];
@@ -45,7 +46,10 @@ router.post('/auth/register', (req, res) => {
   const s = getSettings();
   if (s.register_open !== 'on') return fail(res, 'Registration is closed', 403);
   const { username, email, password } = req.body;
-  if (!username || !email || !password || password.length < 6) return fail(res, 'Invalid input');
+  if (!username || !email || !password) return fail(res, 'All fields are required');
+  if (!isValidUsername(username)) return fail(res, 'Username must be 2-32 chars (letters, numbers, _.-)');
+  if (!isValidEmail(email)) return fail(res, 'Please enter a valid email address');
+  if (password.length < 6) return fail(res, 'Password must be at least 6 characters');
   const exists = db.prepare('SELECT id FROM users WHERE username = ? OR email = ?').get(username, email);
   if (exists) return fail(res, 'Username or email already exists', 409);
   const info = db.prepare('INSERT INTO users (username, email, password) VALUES (?, ?, ?)').run(username, email, bcrypt.hashSync(password, 10));
@@ -113,7 +117,10 @@ router.post('/admin/users', (req, res) => {
   const user = getUserFromReq(req);
   if (!user || user.role !== 'admin') return fail(res, 'Admin only', 403);
   const { username, email, password, role } = req.body;
-  if (!username || !email || !password || password.length < 6) return fail(res, 'Invalid input');
+  if (!username || !email || !password) return fail(res, 'All fields are required');
+  if (!isValidUsername(username)) return fail(res, 'Username must be 2-32 chars (letters, numbers, _.-)');
+  if (!isValidEmail(email)) return fail(res, 'Please enter a valid email address');
+  if (password.length < 6) return fail(res, 'Password must be at least 6 characters');
   const exists = db.prepare('SELECT id FROM users WHERE username = ? OR email = ?').get(username, email);
   if (exists) return fail(res, 'User exists', 409);
   const info = db.prepare('INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)')
