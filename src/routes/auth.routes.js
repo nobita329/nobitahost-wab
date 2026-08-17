@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const { authenticator } = require('otplib');
 const db = require('../db');
 const { getSettings, resolveBackground } = require('../settings');
-const { signToken, logActivity, COOKIE } = require('../middleware/auth');
+const { signToken, logActivity, COOKIE, cookieOptions } = require('../middleware/auth');
 const { sendMail } = require('../mailer');
 const { isValidEmail, isValidUsername } = require('../validate');
 
@@ -39,7 +39,7 @@ router.get('/login/demo', (req, res) => {
     demo.id
   );
   logActivity(demo, 'Logged in (demo auto-login)', req);
-  res.cookie(COOKIE, signToken(demo), { httpOnly: true, sameSite: 'lax', maxAge: 7 * 24 * 3600 * 1000 });
+  res.cookie(COOKIE, signToken(demo), cookieOptions(req));
   res.redirect(getNext(req));
 });
 
@@ -70,7 +70,7 @@ router.post('/login', (req, res) => {
   }
 
   if (user.two_factor_enabled) {
-    res.cookie('nh_pending_2fa', String(user.id), { httpOnly: true, sameSite: 'lax', maxAge: 10 * 60 * 1000 });
+    res.cookie('nh_pending_2fa', String(user.id), cookieOptions(req, { maxAge: 10 * 60 * 1000 }));
     return res.redirect('/verify-2fa?next=' + encodeURIComponent(redirect));
   }
 
@@ -79,7 +79,7 @@ router.post('/login', (req, res) => {
     user.id
   );
   logActivity(user, 'Logged in', req);
-  res.cookie(COOKIE, signToken(user), { httpOnly: true, sameSite: 'lax', maxAge: 7 * 24 * 3600 * 1000 });
+  res.cookie(COOKIE, signToken(user), cookieOptions(req));
   res.redirect(redirect);
 });
 
@@ -184,15 +184,15 @@ router.post('/verify-2fa', (req, res) => {
     user.id
   );
   logActivity(user, 'Logged in (2FA verified)', req);
-  res.clearCookie('nh_pending_2fa');
-  res.cookie(COOKIE, signToken(user), { httpOnly: true, sameSite: 'lax', maxAge: 7 * 24 * 3600 * 1000 });
+  res.clearCookie('nh_pending_2fa', { path: '/' });
+  res.cookie(COOKIE, signToken(user), cookieOptions(req));
   res.redirect(getNext(req));
 });
 
 router.get('/logout', (req, res) => {
   if (req.user) logActivity(req.user, 'Logged out', req);
-  res.clearCookie(COOKIE);
-  res.clearCookie('nh_pending_2fa');
+  res.clearCookie(COOKIE, { path: '/' });
+  res.clearCookie('nh_pending_2fa', { path: '/' });
   res.redirect('/login');
 });
 

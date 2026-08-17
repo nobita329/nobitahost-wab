@@ -13,6 +13,18 @@ function signToken(user) {
   );
 }
 
+function cookieOptions(req, extra = {}) {
+  const proto = req.protocol || 'http';
+  const isSecure = proto === 'https' || (req.headers['x-forwarded-proto'] || '').includes('https');
+  return {
+    httpOnly: true,
+    sameSite: isSecure ? 'none' : 'lax',
+    secure: isSecure,
+    maxAge: extra.maxAge || 7 * 24 * 3600 * 1000,
+    path: '/'
+  };
+}
+
 function logActivity(user, action, req) {
   if (!user) return;
   try {
@@ -42,7 +54,7 @@ function loadUser(req, res, next) {
       const user = db.prepare('SELECT * FROM users WHERE id = ?').get(payload.id);
       if (user && user.status === 'active') req.user = user;
     } catch (e) {
-      res.clearCookie(COOKIE);
+      res.clearCookie(COOKIE, { path: '/' });
     }
   }
   res.locals.user = req.user || null;
@@ -75,6 +87,7 @@ module.exports = {
   COOKIE,
   JWT_SECRET,
   signToken,
+  cookieOptions,
   logActivity,
   loadUser,
   requireAuth,

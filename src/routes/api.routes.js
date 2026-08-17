@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../db');
 const { getSettings, setSettingsMany } = require('../settings');
-const { JWT_SECRET, COOKIE, logActivity } = require('../middleware/auth');
+const { JWT_SECRET, COOKIE, logActivity, cookieOptions } = require('../middleware/auth');
 const { getSystemStats, recordSample, getHistory } = require('../system');
 const { isValidEmail, isValidUsername } = require('../validate');
 
@@ -38,7 +38,7 @@ router.post('/auth/login', (req, res) => {
   if (user.two_factor_enabled) return ok(res, { twoFactorRequired: true, userId: user.id });
   const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
   logActivity(user, 'Logged in via API', req);
-  res.cookie(COOKIE, token, { httpOnly: true, sameSite: 'lax', maxAge: 7 * 24 * 3600 * 1000 });
+  res.cookie(COOKIE, token, cookieOptions(req));
   ok(res, { user: publicUser(user), token });
 });
 
