@@ -1,4 +1,35 @@
     </main>
+    <footer class="lucent-footer-wrap">
+      <%
+        var fdata = (typeof footerData !== 'undefined' && footerData && footerData.enabled) ? footerData : null;
+        var fvis = function (links) { return (links || []).filter(function (l) { return l.visibility === 'always' || (l.visibility === 'auth' && user) || (l.visibility === 'guest' && !user); }); };
+      %>
+      <% if (fdata && (fdata.columns.length || fvis(fdata.legal).length)) { %>
+      <div class="site-footer">
+        <div class="sf-cols">
+          <% fdata.columns.forEach(function (col) { var links = fvis(col.links); if (!col.title && !links.length) return; %>
+          <div class="sf-col">
+            <b class="sf-title"><%= col.title %></b>
+            <% links.forEach(function (l) { %>
+            <a href="<%= l.url %>"<%= l.type === 'external' ? ' target="_blank" rel="noopener noreferrer"' : '' %>><%= l.label %></a>
+            <% }) %>
+          </div>
+          <% }) %>
+        </div>
+      </div>
+      <% } %>
+      <div class="lucent-footer">
+        <span>© <%= new Date().getFullYear() %> <b><%= settings.panel_name %></b><%= fdata && fdata.copyright ? ' · ' + fdata.copyright : ' · All rights reserved' %></span>
+        <div class="lf-links">
+          <% if (fdata) { fvis(fdata.legal).forEach(function (l) { %>
+          <a href="<%= l.url %>"<%= l.type === 'external' ? ' target="_blank" rel="noopener noreferrer"' : '' %>><%= l.label %></a>
+          <% }); } %>
+          <a href="/tutorials">Tutorials</a>
+          <a href="/docs">Docs</a>
+          <% if (user && user.role === 'admin') { %><a href="/admin">Admin</a><% } %>
+        </div>
+      </div>
+    </footer>
   </div>
 </div>
 
@@ -55,6 +86,7 @@
     <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
     <symbol id="i-map-pin" viewBox="0 0 24 24"><path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.4" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
     <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4m11.4-11.4 1.4-1.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
     <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 9h18M8 3v4m8-4v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
     <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
     <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="8.5" cy="9.5" r="1.5" fill="currentColor"/><path d="m21 15-5-5L6 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
@@ -64,6 +96,10 @@
 </svg>
 
 <script src="/js/app.js"></script>
+<script>window.__NH_EXTRAS = { cookieBanner: <%= settings.cookie_banner === 'on' ? 'true' : 'false' %>, antiAdblock: <%= settings.anti_adblock === 'on' ? 'true' : 'false' %> };</script>
+<script src="/js/extras.js"></script>
+<% if (settings.inject_body_code) { %><%- settings.inject_body_code %><% } %>
+<% if (settings.cf_analytics_enabled === 'on' && settings.cf_analytics_token) { %><script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "<%= settings.cf_analytics_token %>"}'></script><% } %>
 <% if (settings.music_type !== 'none' && settings.music_url) { %><script>window.__NH_VOLUME = <%= parseInt(settings.music_volume, 10) || 40 %>;</script><script src="/js/music.js"></script><% } %>
 <% if (settings.discord_enabled === 'on' && settings.discord_server_id) { %><script src="https://cdn.jsdelivr.net/npm/@widgetbot/html-embed"></script><% } %>
 <% if (typeof extraScripts !== 'undefined' && extraScripts) { %><%- extraScripts %><% } %>

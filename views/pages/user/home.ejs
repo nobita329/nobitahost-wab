@@ -181,4 +181,25 @@
   </div>
 </div>
 
+<% if (blogPosts && blogPosts.length) { %>
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-head">
+        <h2><svg class="ic"><use href="#i-book"/></svg> From the blog</h2>
+        <a class="btn btn-sm" href="/blog">See more →</a>
+      </div>
+      <div class="card-body blog-widget">
+        <% blogPosts.forEach(function (p) { %>
+        <a class="bw-item" href="/blog/<%= p.slug %>">
+          <span class="bw-title"><b><%= p.title %></b><small><%= p.excerpt %></small></span>
+          <span class="hint bw-date"><svg class="ic"><use href="#i-calendar"/></svg> <%= new Date(String(p.published_at).replace(' ', 'T') + 'Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) %></span>
+        </a>
+        <% }) %>
+      </div>
+    </div>
+  </div>
+</div>
+<% } %>
+
 <%- include('../../partials/footer') %>

@@ -1,0 +1,64 @@
+<%- include('../../partials/head', { title: title }) %>
+
+<%- include('../../partials/cf-head', { base: 'domains', tab, error, query, showZoneSwitcher: false }) %>
+
+<% if (tab === 'management') { %>
+<div class="card">
+  <div class="card-head"><h2><svg class="ic"><use href="#i-link"/></svg> All Domains (<%= zones.length %>)</h2></div>
+  <div class="card-body">
+    <% if (!zones.length) { %><p class="hint center">No zones visible to this token.</p><% } else { %>
+    <div class="table-card">
+      <table>
+        <thead><tr><th>Domain</th><th>Status</th><th>Plan</th><th>Since</th><th></th></tr></thead>
+        <tbody>
+          <% zones.forEach(function (z) { %>
+          <tr>
+            <td><b><%= z.name %></b></td>
+            <td><span class="badge <%= z.status === 'active' ? 'green' : '' %>"><%= z.status %></span></td>
+            <td><%= (z.plan && z.plan.name) || 'Free' %></td>
+            <td><%= (z.created_on || '').slice(0, 10) %></td>
+            <td class="ta-r">
+              <form method="POST" action="/admin/cloudflare/switch-zone" class="inline">
+                <input type="hidden" name="zoneId" value="<%= z.id %>">
+                <button class="btn btn-sm" title="Set as active zone">Use</button>
+              </form>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </div>
+</div>
+
+<% } else { %>
+<p class="hint">Traffic for the last 7 days per domain (top <%= stats.length || 0 %> by requests).</p>
+<div class="card">
+  <div class="card-head"><h2><svg class="ic"><use href="#i-chart"/></svg> Domain Traffic (7d)</h2></div>
+  <div class="card-body">
+    <% if (!stats.length) { %><p class="hint center">No analytics data available.</p><% } else { %>
+    <div class="table-card">
+      <table>
+        <thead><tr><th>Domain</th><th>Status</th><th>Requests</th><th>Page Views</th><th>Visitors</th><th>Threats</th><th>Bandwidth</th></tr></thead>
+        <tbody>
+          <% stats.forEach(function (s) { %>
+          <tr>
+            <td><b><%= s.name %></b></td>
+            <td><span class="badge <%= s.status === 'active' ? 'green' : '' %>"><%= s.status %></span></td>
+            <td><%= s.requests.toLocaleString() %></td>
+            <td><%= s.pageViews.toLocaleString() %></td>
+            <td><%= s.visitors.toLocaleString() %></td>
+            <td><%= s.threats.toLocaleString() %></td>
+            <td><%= (s.bytes / 1073741824).toFixed(2) %> GB</td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </div>
+</div>
+<% } %>
+
+<%- include('../../partials/footer') %>

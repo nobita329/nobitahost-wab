@@ -1,0 +1,66 @@
+<%- include('../../partials/head', { title: title }) %>
+
+<%- include('../../partials/cf-head', { base: 'ddos', tab, error, query, showZoneSwitcher: true, zonesList: typeof zonesList !== 'undefined' ? zonesList : [], currentZoneId: typeof currentZoneId !== 'undefined' ? currentZoneId : '' }) %>
+
+<% if (tab === 'management') { %>
+<div class="card">
+  <div class="card-head"><h2><svg class="ic"><use href="#i-shield"/></svg> Protection Level</h2></div>
+  <div class="card-body">
+    <p class="hint">Security Level decides how aggressively Cloudflare challenges suspicious visitors — higher = stronger DDoS/abuse protection.</p>
+    <form method="POST" action="/admin/cloudflare/ddos/level" class="row cf-dns-form">
+      <div class="col-6 col-md-12">
+        <select name="level">
+          <% [['off','Off'],['essentially_off','Essentially Off'],['low','Low'],['medium','Medium (recommended)'],['high','High'],['under_attack',"I'm Under Attack!"]].forEach(function (lv) { %>
+          <option value="<%= lv[0] %>" <%= settingsMap.security_level === lv[0] ? 'selected' : '' %>><%= lv[1] %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="col-3 col-md-12"><button class="btn btn-accent btn-block">Apply</button></div>
+    </form>
+    <% if (settingsMap.security_level) { %><p>Current level: <b class="badge orange"><%= settingsMap.security_level %></b></p><% } %>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2><svg class="ic"><use href="#i-shield"/></svg> Other Protections</h2></div>
+  <div class="card-body">
+    <div class="table-card">
+      <table>
+        <thead><tr><th>Setting</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Browser Integrity Check</td><td><span class="badge <%= settingsMap.browser_check === 'on' ? 'green' : '' %>"><%= settingsMap.browser_check || '—' %></span></td></tr>
+          <tr><td>Challenge Passage</td><td><%= settingsMap.challenge_ttl || '—' %>s</td></tr>
+          <tr><td>Bot Fight Mode</td><td><span class="hint">Manage in Security tab / CF dashboard</span></td></tr>
+          <tr><td>DDoS Protection (L7)</td><td><span class="badge green">Always on</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<% } else { %>
+<div class="card">
+  <div class="card-head"><h2><svg class="ic"><use href="#i-chart"/></svg> Threats Blocked (7d)</h2></div>
+  <div class="card-body">
+    <% if (!analytics.length) { %><p class="hint center">No analytics data.</p><% } else { %>
+    <%
+      var maxThr = Math.max.apply(null, analytics.map(function (a) { return a.threats || 0; })) || 1;
+      var totThr = 0; analytics.forEach(function (a) { totThr += a.threats; });
+    %>
+    <div class="cf-chart cf-threats">
+      <% analytics.forEach(function (a) { %>
+      <div class="cf-bar-col" title="<%= a.date %>: <%= a.threats %> threats blocked">
+        <div class="cf-bar red" style="height: <%= Math.max(4, Math.round(a.threats / maxThr * 100)) %>%"></div>
+        <span class="cf-bar-label"><%= a.date.slice(5) %></span>
+      </div>
+      <% }) %>
+    </div>
+    <div class="row cf-totals">
+      <div class="col-4 col-md-4"><b><%= totThr.toLocaleString() %></b><span>Total threats (7d)</span></div>
+    </div>
+    <% } %>
+  </div>
+</div>
+<% } %>
+
+<%- include('../../partials/footer') %>

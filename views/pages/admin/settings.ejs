@@ -284,6 +284,21 @@
         </div>
       </div>
 
+      <div class="card">
+        <div class="card-head"><h2><svg class="ic"><use href="#i-plus"/></svg> Extras</h2></div>
+        <div class="card-body">
+          <div class="switch-row"><div><b>Cookie Consent Banner</b><small>Show a cookie consent notice for visitors</small></div>
+            <label class="switch"><input type="checkbox" name="cookie_banner" <%= settings.cookie_banner === 'on' ? 'checked' : '' %>><span></span></label>
+          </div>
+          <div class="switch-row"><div><b>Anti-Adblock Shield</b><small>Ask visitors to disable their ad blocker</small></div>
+            <label class="switch"><input type="checkbox" name="anti_adblock" <%= settings.anti_adblock === 'on' ? 'checked' : '' %>><span></span></label>
+          </div>
+          <div class="field"><label>Inject Body Code <small>(HTML/script injected on every page)</small></label>
+            <textarea name="inject_body_code" rows="4" placeholder="<script>...</script> or any HTML"><%= settings.inject_body_code || '' %></textarea>
+          </div>
+        </div>
+      </div>
+
       <div class="sticky-save">
         <button class="btn btn-accent btn-block btn-lg" type="submit"><svg class="ic"><use href="#i-shield"/></svg> Save All Settings</button>
       </div>

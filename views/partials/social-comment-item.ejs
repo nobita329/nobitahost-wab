@@ -1,0 +1,60 @@
+<div class="pc-item <%= depth > 0 ? 'pc-reply' : '' %>">
+  <img class="avatar sm" src="<%= c.profile_pic || '/img/avatar.svg' %>" alt="">
+  <div class="pc-main">
+    <div class="pc-bubble">
+      <div class="pc-head">
+        <b class="pc-name"><%= c.username %></b>
+        <% if (c.role === 'admin') { %><span class="badge gold">admin</span><% } %>
+        <span class="pc-time"><%= c.time_ago %></span>
+        <% if (c.is_edited) { %><span class="pc-edited">edited</span><% } %>
+      </div>
+      <div class="pc-content"><%= c.content %></div>
+    </div>
+    <div class="pc-actions">
+      <% REACTION_TYPES.forEach(function (t) {
+           var r = null;
+           for (var i = 0; i < c.reactions.length; i++) if (c.reactions[i].type === t) r = c.reactions[i];
+           var label = RX_EMOJI[t] + (r ? ' ' + r.count : '');
+           if (user) { %>
+        <form method="POST" action="/profile/comment/<%= c.id %>/react" class="inline">
+          <input type="hidden" name="back" value="<%= pcBack %>">
+          <input type="hidden" name="type" value="<%= t %>">
+          <button type="submit" class="pc-react <%= r && r.mine ? 'mine' : '' %>"><%= label %></button>
+        </form>
+        <% } else if (r) { %>
+        <span class="pc-react static"><%= label %></span>
+        <% } %>
+      <% }) %>
+      <% if (user && depth === 0) { %>
+      <details class="pc-details">
+        <summary>Reply</summary>
+        <form method="POST" action="/profile/<%= c.profile_user_id %>/comment" class="pc-inline-form">
+          <input type="hidden" name="back" value="<%= pcBack %>">
+          <input type="hidden" name="parent_id" value="<%= c.id %>">
+          <textarea name="content" rows="2" maxlength="1000" minlength="3" placeholder="Reply to <%= c.username %>…" required></textarea>
+          <button class="btn btn-sm btn-accent" type="submit">Reply</button>
+        </form>
+      </details>
+      <% } %>
+      <% if (user && user.id === c.author_id) { %>
+      <details class="pc-details">
+        <summary>Edit</summary>
+        <form method="POST" action="/profile/comment/<%= c.id %>/edit" class="pc-inline-form">
+          <input type="hidden" name="back" value="<%= pcBack %>">
+          <textarea name="content" rows="2" maxlength="1000" minlength="3" required><%= c.content %></textarea>
+          <button class="btn btn-sm btn-accent" type="submit">Save</button>
+        </form>
+      </details>
+      <% } %>
+      <% if (user && (user.id === c.author_id || user.role === 'admin' || user.id === c.profile_user_id)) { %>
+      <form method="POST" action="/profile/comment/<%= c.id %>/delete" class="inline" data-confirm="Delete this comment?">
+        <input type="hidden" name="back" value="<%= pcBack %>">
+        <button type="submit" class="pc-react danger" title="Delete"><svg class="ic"><use href="#i-trash"/></svg></button>
+      </form>
+      <% } %>
+    </div>
+    <% c.replies.forEach(function (r) { %>
+      <%- include('social-comment-item', { c: r, depth: depth + 1, pcBack: pcBack, profileUser: profileUser, RX_EMOJI: RX_EMOJI, REACTION_TYPES: REACTION_TYPES }) %>
+    <% }) %>
+  </div>
+</div>

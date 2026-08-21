@@ -1,0 +1,33 @@
+<%- include('../../partials/head', { title: terms.title }) %>
+
+<div class="obs-terms">
+  <div class="card obs-hero obs-terms-hero">
+    <h1><%= terms.title %></h1>
+    <% if (terms.summary) { %><p><%= terms.summary %></p><% } %>
+    <% if (terms.last_updated) { %><span class="badge"><svg class="ic"><use href="#i-calendar"/></svg> Last updated: <%= terms.last_updated %></span><% } %>
+  </div>
+
+  <div class="obs-terms-grid">
+    <div class="obs-terms-main">
+      <% terms.sections.forEach(function (s, i) { %>
+      <div class="card obs-section obs-term-section" id="<%= s.id %>">
+        <div class="card-head"><h2><span class="term-num"><%= i + 1 %></span> <%= s.title %></h2></div>
+        <div class="card-body md-body"><%- s.html %></div>
+      </div>
+      <% }) %>
+    </div>
+
+    <aside class="blog-side">
+      <div class="card blog-toc">
+        <div class="card-head"><h2><svg class="ic"><use href="#i-file"/></svg> Table of contents</h2></div>
+        <div class="card-body toc-list">
+          <% terms.sections.forEach(function (s, i) { %>
+            <a href="#<%= s.id %>"><span class="toc-num"><%= i + 1 %>.</span> <%= s.title %></a>
+          <% }) %>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<%- include('../../partials/footer') %>

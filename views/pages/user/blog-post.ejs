@@ -1,0 +1,85 @@
+<%- include('../../partials/head', { title: post.seo_title || post.title }) %>
+
+<div class="blog-article">
+  <nav class="blog-crumbs card">
+    <a href="/"><svg class="ic"><use href="#i-home"/></svg></a>
+    <span class="crumb-sep">/</span>
+    <a href="/blog">Blog</a>
+    <span class="crumb-sep">/</span>
+    <span class="crumb-here"><%= post.title %></span>
+  </nav>
+
+  <div class="blog-article-grid">
+    <div class="blog-main">
+      <article class="card blog-post-full">
+        <% if (post.cover_image_url) { %>
+        <div class="blog-cover"><img src="<%= post.cover_image_url %>" alt="<%= post.title %>"></div>
+        <% } %>
+        <div class="blog-post-body">
+          <header class="blog-post-head">
+            <div class="blog-post-meta hint">
+              <span><svg class="ic"><use href="#i-calendar"/></svg> <%= fmtDate(post.published_at) %></span>
+              <span><svg class="ic"><use href="#i-eye"/></svg> <%= post.views %> views</span>
+            </div>
+            <h1><%= post.title %></h1>
+            <% if (post.description) { %><p class="blog-post-desc"><%= post.description %></p><% } %>
+            <% if (post.tag_list.length) { %>
+            <div class="blog-card-tags">
+              <% post.tag_list.forEach(function (t) { %><a class="chip" href="/blog?tag=<%= encodeURIComponent(t) %>"><%= t %></a><% }) %>
+            </div>
+            <% } %>
+          </header>
+          <div class="md-body"><%- post.html %></div>
+        </div>
+      </article>
+
+      <div class="card blog-feedback" id="feedback">
+        <div class="bf-row">
+          <div class="bf-info">
+            <b>Did you find this article helpful?</b>
+            <span class="hint"><%= post.feedback.helpful %> <%= post.feedback.helpful === 1 ? 'person' : 'people' %> found this helpful.</span>
+            <% if (myFeedback !== null) { %><span class="hint bf-done"><svg class="ic"><use href="#i-shield"/></svg> <%= myFeedback ? 'You marked this as helpful.' : 'You told us this needs work.' %></span><% } %>
+          </div>
+          <div class="bf-actions">
+            <form method="POST" action="/blog/<%= post.slug %>/feedback" class="inline">
+              <input type="hidden" name="back" value="<%= '/blog/' + post.slug %>">
+              <input type="hidden" name="helpful" value="yes">
+              <button class="btn btn-accent btn-sm" type="submit">👍 Yes</button>
+            </form>
+            <form method="POST" action="/blog/<%= post.slug %>/feedback" class="inline">
+              <input type="hidden" name="back" value="<%= '/blog/' + post.slug %>">
+              <input type="hidden" name="helpful" value="no">
+              <button class="btn btn-sm" type="submit">👎 No</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <% if (post.prev || post.next) { %>
+      <div class="blog-prevnext">
+        <% if (post.prev) { %>
+        <a class="card pn-card" href="/blog/<%= post.prev.slug %>"><span class="hint">← Previous</span><b><%= post.prev.title %></b></a>
+        <% } else { %><div></div><% } %>
+        <% if (post.next) { %>
+        <a class="card pn-card pn-right" href="/blog/<%= post.next.slug %>"><span class="hint">Next →</span><b><%= post.next.title %></b></a>
+        <% } %>
+      </div>
+      <% } %>
+    </div>
+
+    <% if (post.toc.length) { %>
+    <aside class="blog-side">
+      <div class="card blog-toc">
+        <div class="card-head"><h2><svg class="ic"><use href="#i-file"/></svg> On this page</h2></div>
+        <div class="card-body toc-list">
+          <% post.toc.forEach(function (h) { %>
+            <a class="toc-l<%= h.level %>" href="#<%= h.id %>"><%= h.text %></a>
+          <% }) %>
+        </div>
+      </div>
+    </aside>
+    <% } %>
+  </div>
+</div>
+
+<%- include('../../partials/footer') %>

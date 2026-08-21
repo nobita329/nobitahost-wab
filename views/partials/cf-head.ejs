@@ -1,0 +1,23 @@
+<div class="cf-sub-head">
+  <div class="card cf-tabs-card">
+    <div class="cf-tabs">
+      <a class="cf-tab <%= tab === 'management' ? 'active' : '' %>" href="/admin/cloudflare/<%= base %>?tab=management"><svg class="ic"><use href="#i-pencil"/></svg> Management</a>
+      <a class="cf-tab <%= tab === 'analytics' ? 'active' : '' %>" href="/admin/cloudflare/<%= base %>?tab=analytics"><svg class="ic"><use href="#i-chart"/></svg> Analytics</a>
+    </div>
+    <% if (typeof showZoneSwitcher !== 'undefined' && showZoneSwitcher) { %>
+    <form method="POST" action="/admin/cloudflare/switch-zone" class="inline cf-zone-switch">
+      <select name="zoneId" onchange="this.form.submit()">
+        <% (typeof zonesList !== 'undefined' ? zonesList : []).forEach(function (z) { %>
+        <option value="<%= z.id %>" <%= z.id === currentZoneId ? 'selected' : '' %>><%= z.name %></option>
+        <% }) %>
+      </select>
+    </form>
+    <% } %>
+  </div>
+  <a class="btn btn-sm" href="/admin/cloudflare">← Overview</a>
+</div>
+<% if (query.saved) { %><div class="alert alert-success">Saved.</div><% } %>
+<% if (query.created) { %><div class="alert alert-success">Created.</div><% } %>
+<% if (query.deleted) { %><div class="alert alert-success">Deleted.</div><% } %>
+<% if (query.error) { %><div class="alert alert-error">⚠ <%= query.error %></div><% } %>
+<% if (error) { %><div class="alert alert-error">⚠ <%= error %></div><% } %>

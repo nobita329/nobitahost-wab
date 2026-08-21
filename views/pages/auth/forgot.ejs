@@ -26,5 +26,8 @@
   </div>
 </div>
 <script src="/js/app.js"></script>
+<script>window.__NH_EXTRAS = { cookieBanner: <%= settings.cookie_banner === 'on' ? 'true' : 'false' %>, antiAdblock: <%= settings.anti_adblock === 'on' ? 'true' : 'false' %> };</script>
+<script src="/js/extras.js"></script>
+<% if (settings.inject_body_code) { %><%- settings.inject_body_code %><% } %>
 </body>
 </html>

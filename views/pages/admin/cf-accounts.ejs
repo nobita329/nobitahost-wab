@@ -1,0 +1,81 @@
+<%- include('../../partials/head', { title: title }) %>
+
+<%- include('../../partials/cf-head', { base: 'accounts', tab, error, query, showZoneSwitcher: false }) %>
+
+<% if (tab === 'management') { %>
+<div class="card">
+  <div class="card-head"><h2><svg class="ic"><use href="#i-users"/></svg> Accounts (<%= accs.length %>)</h2></div>
+  <div class="card-body">
+    <div class="table-card">
+      <table>
+        <thead><tr><th>Name</th><th>ID</th><th>Created</th></tr></thead>
+        <tbody>
+          <% accs.forEach(function (a) { %>
+          <tr>
+            <td><b><%= a.name %></b> <%= a.id === (typeof currentAccountId !== 'undefined' ? currentAccountId : '') ? '<span class="badge green">active</span>' : '' %></td>
+            <td class="mono"><%= a.id.slice(0, 16) %>…</td>
+            <td><%= (a.created_on || '').slice(0, 10) %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2><svg class="ic"><use href="#i-users"/></svg> Members</h2></div>
+  <div class="card-body">
+    <% if (!members.length) { %><p class="hint center">No members visible.</p><% } else { %>
+    <div class="table-card">
+      <table>
+        <thead><tr><th>Email</th><th>Name</th><th>Status</th><th>Roles</th></tr></thead>
+        <tbody>
+          <% members.forEach(function (m) { %>
+          <tr>
+            <td><%= m.user && m.user.email %></td>
+            <td><%= m.user && (m.user.first_name || m.user.name || '—') %></td>
+            <td><span class="badge <%= m.status === 'accepted' ? 'green' : 'orange' %>"><%= m.status %></span></td>
+            <td><%= (m.roles || []).map(function (r) { return r.name; }).join(', ') %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </div>
+</div>
+
+<% } else { %>
+<p class="hint">Aggregated traffic across your top domains (last 7 days).</p>
+<%
+  var tot = { requests: 0, pageViews: 0, visitors: 0, threats: 0, bytes: 0 };
+  stats.forEach(function (s) { tot.requests += s.requests; tot.pageViews += s.pageViews; tot.visitors += s.visitors; tot.threats += s.threats; tot.bytes += s.bytes; });
+%>
+<div class="row">
+  <div class="col-3 col-md-6 col-sm-12"><div class="card stat-card"><div class="stat-icon accent1"><svg class="ic"><use href="#i-chart"/></svg></div><div class="stat-meta"><b><%= tot.requests.toLocaleString() %></b><span>Requests (7d)</span></div></div></div>
+  <div class="col-3 col-md-6 col-sm-12"><div class="card stat-card"><div class="stat-icon accent2"><svg class="ic"><use href="#i-eye"/></svg></div><div class="stat-meta"><b><%= tot.pageViews.toLocaleString() %></b><span>Page Views</span></div></div></div>
+  <div class="col-3 col-md-6 col-sm-12"><div class="card stat-card"><div class="stat-icon accent3"><svg class="ic"><use href="#i-users"/></svg></div><div class="stat-meta"><b><%= tot.visitors.toLocaleString() %></b><span>Visitors</span></div></div></div>
+  <div class="col-3 col-md-6 col-sm-12"><div class="card stat-card"><div class="stat-icon accent4"><svg class="ic"><use href="#i-shield"/></svg></div><div class="stat-meta"><b><%= (tot.bytes / 1073741824).toFixed(1) %> GB</b><span>Bandwidth</span></div></div></div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2><svg class="ic"><use href="#i-link"/></svg> Top Domains</h2></div>
+  <div class="card-body">
+    <% if (!stats.length) { %><p class="hint center">No data.</p><% } else { %>
+    <div class="cf-domain-bars">
+      <% var maxR = Math.max.apply(null, stats.map(function (s) { return s.requests || 1; })); %>
+      <% stats.slice(0, 10).forEach(function (s) { %>
+      <div class="cf-db-row">
+        <span class="cf-db-name"><%= s.name %></span>
+        <div class="cf-db-track"><div class="cf-db-fill" style="width: <%= Math.max(2, Math.round(s.requests / maxR * 100)) %>%"></div></div>
+        <span class="cf-db-val"><%= s.requests.toLocaleString() %></span>
+      </div>
+      <% }) %>
+    </div>
+    <% } %>
+  </div>
+</div>
+<% } %>
+
+<%- include('../../partials/footer') %>

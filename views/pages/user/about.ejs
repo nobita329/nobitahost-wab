@@ -1,5 +1,109 @@
-<%- include('../../partials/head', { title: 'About' }) %>
+<%- include('../../partials/head', { title: about.enabled ? (about.seo_title || 'About') : 'About' }) %>
 
+<% if (about.enabled) { %>
+<div class="obs-about">
+  <div class="card obs-hero">
+    <div class="obs-hero-inner">
+      <div class="obs-hero-text">
+        <h1><%= about.hero.title %></h1>
+        <% if (about.hero.subtitle) { %><p><%= about.hero.subtitle %></p><% } %>
+        <div class="obs-hero-ctas">
+          <% if (about.hero.cta1_label && about.hero.cta1_url) { %><a class="btn btn-accent" href="<%= about.hero.cta1_url %>"><%= about.hero.cta1_label %></a><% } %>
+          <% if (about.hero.cta2_label && about.hero.cta2_url) { %><a class="btn" href="<%= about.hero.cta2_url %>"><%= about.hero.cta2_label %></a><% } %>
+        </div>
+      </div>
+      <% if (about.hero.image_url) { %>
+      <div class="obs-hero-art"><img src="<%= about.hero.image_url %>" alt="<%= about.hero.title %>"></div>
+      <% } %>
+    </div>
+  </div>
+
+  <% if (about.stats_enabled && about.stats.length) { %>
+  <div class="row obs-stats">
+    <% about.stats.forEach(function (s) { %>
+    <div class="col-3 col-md-6 col-sm-12">
+      <div class="card stat-card"><div class="stat-meta"><b><%= s.value %></b><span><%= s.label %></span></div></div>
+    </div>
+    <% }) %>
+  </div>
+  <% } %>
+
+  <% if (about.story_enabled && about.story_paragraphs.length) { %>
+  <div class="card obs-section">
+    <div class="card-head"><h2><svg class="ic"><use href="#i-book"/></svg> <%= about.story_title %></h2></div>
+    <div class="card-body obs-story">
+      <% about.story_paragraphs.forEach(function (p) { %><p><%= p %></p><% }) %>
+    </div>
+  </div>
+  <% } %>
+
+  <% if (about.values_enabled && about.values_items.length) { %>
+  <div class="card obs-section">
+    <div class="card-head"><h2><svg class="ic"><use href="#i-heart"/></svg> <%= about.values_title %></h2></div>
+    <div class="card-body">
+      <div class="row">
+        <% about.values_items.forEach(function (v) { %>
+        <div class="col-6 col-md-6 col-sm-12">
+          <div class="obs-value-card">
+            <b><%= v.title %></b>
+            <p><%= v.text %></p>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+    </div>
+  </div>
+  <% } %>
+
+  <% if (about.team_enabled && about.team_members.length) { %>
+  <div class="card obs-section">
+    <div class="card-head"><h2><svg class="ic"><use href="#i-users"/></svg> <%= about.team_title %></h2></div>
+    <div class="card-body">
+      <div class="row">
+        <% about.team_members.forEach(function (m) { %>
+        <div class="col-4 col-md-6 col-sm-12">
+          <div class="obs-team-card">
+            <% if (m.image) { %><img src="<%= m.image %>" alt="<%= m.name %>"><% } else { %><span class="avatar xl"><svg class="ic"><use href="#i-user"/></svg></span><% } %>
+            <b><%= m.name %></b>
+            <span class="hint"><%= m.role %></span>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+    </div>
+  </div>
+  <% } %>
+
+  <% if (about.timeline_enabled && about.timeline_items.length) { %>
+  <div class="card obs-section">
+    <div class="card-head"><h2><svg class="ic"><use href="#i-clock"/></svg> <%= about.timeline_title %></h2></div>
+    <div class="card-body">
+      <div class="obs-timeline">
+        <% about.timeline_items.forEach(function (t) { %>
+        <div class="obs-tl-item">
+          <span class="obs-tl-year"><%= t.year %></span>
+          <div class="obs-tl-body"><b><%= t.title %></b><p><%= t.text %></p></div>
+        </div>
+        <% }) %>
+      </div>
+    </div>
+  </div>
+  <% } %>
+
+  <% if (about.gallery_enabled && about.gallery_images.length) { %>
+  <div class="card obs-section">
+    <div class="card-head"><h2><svg class="ic"><use href="#i-image"/></svg> <%= about.gallery_title %></h2></div>
+    <div class="card-body">
+      <div class="obs-gallery">
+        <% about.gallery_images.forEach(function (g) { %>
+          <% if (g.url) { %><img src="<%= g.url %>" alt="<%= g.alt || 'Gallery image' %>" loading="lazy"><% } %>
+        <% }) %>
+      </div>
+    </div>
+  </div>
+  <% } %>
+</div>
+<% } else { %>
 <div class="row">
   <div class="col-12">
     <div class="card">
@@ -24,5 +128,6 @@
     </div>
   </div>
 </div>
+<% } %>
 
 <%- include('../../partials/footer') %>

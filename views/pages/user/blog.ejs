@@ -1,0 +1,98 @@
+<%- include('../../partials/head', { title: 'Blog' }) %>
+
+<div class="blog-archive">
+  <div class="card blog-head-card">
+    <div class="blog-head-row">
+      <div>
+        <h1 class="grad-text">Blog</h1>
+        <p class="hint">Guides, updates and news from <%= settings.panel_name %>.</p>
+      </div>
+      <form method="GET" action="/blog" class="blog-controls">
+        <% if (query.tag) { %><input type="hidden" name="tag" value="<%= query.tag %>"><% } %>
+        <div class="blog-search">
+          <svg class="ic"><use href="#i-search"/></svg>
+          <input type="search" name="search" value="<%= query.search || '' %>" placeholder="Search posts…" onchange="this.form.submit()">
+        </div>
+        <select name="sort" onchange="this.form.submit()">
+          <option value="latest" <%= (query.sort || 'latest') === 'latest' ? 'selected' : '' %>>Latest</option>
+          <option value="oldest" <%= query.sort === 'oldest' ? 'selected' : '' %>>Oldest</option>
+          <option value="updated" <%= query.sort === 'updated' ? 'selected' : '' %>>Updated</option>
+          <option value="popular" <%= query.sort === 'popular' ? 'selected' : '' %>>Popular</option>
+        </select>
+      </form>
+    </div>
+
+    <% if (tags.length) { %>
+    <div class="blog-chips">
+      <a class="chip <%= !query.tag ? 'chip-active' : '' %>" href="/blog<%= query.search ? '?search=' + encodeURIComponent(query.search) : '' %>">All</a>
+      <% tags.forEach(function (t) { %>
+        <a class="chip <%= query.tag === t.label ? 'chip-active' : '' %>" href="/blog?tag=<%= encodeURIComponent(t.label) %><%= query.search ? '&search=' + encodeURIComponent(query.search) : '' %>"><%= t.label %> <span><%= t.count %></span></a>
+      <% }) %>
+    </div>
+    <% } %>
+  </div>
+
+  <% if (!posts.length) { %>
+    <div class="card blog-empty">
+      <span class="badge">🔍</span>
+      <b><%= (query.search || query.tag) ? 'No posts found' : 'No posts have been published yet' %></b>
+      <p class="hint"><%= (query.search || query.tag) ? 'Try adjusting your search or filters.' : 'Check back later for new updates.' %></p>
+      <% if (query.search || query.tag) { %><a class="btn btn-sm" href="/blog">Clear filters</a><% } %>
+    </div>
+  <% } else { %>
+  <div class="row">
+    <% posts.forEach(function (p) {
+         var isNew = p.published_at && (Date.now() - new Date(String(p.published_at).replace(' ', 'T') + 'Z').getTime()) < 7 * 86400000;
+    %>
+    <div class="col-4 col-md-6 col-sm-12">
+      <a href="/blog/<%= p.slug %>" class="blog-post-card">
+        <article class="card blog-card-inner">
+          <div class="blog-card-media">
+            <% if (p.cover_image_url) { %>
+              <img src="<%= p.cover_image_url %>" alt="<%= p.title %>" loading="lazy" decoding="async">
+            <% } else { %>
+              <div class="blog-card-placeholder"><svg class="ic"><use href="#i-image"/></svg></div>
+            <% } %>
+            <span class="blog-card-arrow"><svg class="ic"><use href="#i-chevron-right"/></svg></span>
+          </div>
+          <div class="blog-card-body">
+            <div class="blog-card-tags">
+              <% if (isNew) { %><span class="badge green">New</span><% } %>
+              <% p.tag_list.slice(0, 2).forEach(function (t) { %><span class="badge"><%= t %></span><% }) %>
+            </div>
+            <h2><%= p.title %></h2>
+            <p><%= p.excerpt %></p>
+            <div class="blog-card-foot">
+              <span class="hint"><svg class="ic"><use href="#i-calendar"/></svg> <%= fmtDate(p.published_at) %></span>
+              <span class="blog-read">Read article →</span>
+            </div>
+          </div>
+        </article>
+      </a>
+    </div>
+    <% }) %>
+  </div>
+
+  <% if (pages > 1) { %>
+  <nav class="blog-pager">
+    <% function pageUrl(n) {
+         var params = [];
+         if (query.search) params.push('search=' + encodeURIComponent(query.search));
+         if (query.tag) params.push('tag=' + encodeURIComponent(query.tag));
+         if (query.sort && query.sort !== 'latest') params.push('sort=' + query.sort);
+         if (n > 1) params.push('page=' + n);
+         return '/blog' + (params.length ? '?' + params.join('&') : '');
+       } %>
+    <% if (pageNum > 1) { %><a class="btn btn-sm" href="<%= pageUrl(pageNum - 1) %>">← Prev</a><% } %>
+    <% for (var n = 1; n <= pages; n++) {
+         if (n === 1 || n === pages || Math.abs(n - pageNum) <= 1) { %>
+          <a class="btn btn-sm <%= n === pageNum ? 'btn-accent' : '' %>" href="<%= pageUrl(n) %>"><%= n %></a>
+        <% } else if (Math.abs(n - pageNum) === 2) { %><span class="hint">…</span><% }
+       } %>
+    <% if (pageNum < pages) { %><a class="btn btn-sm" href="<%= pageUrl(pageNum + 1) %>">Next →</a><% } %>
+  </nav>
+  <% } %>
+  <% } %>
+</div>
+
+<%- include('../../partials/footer') %>

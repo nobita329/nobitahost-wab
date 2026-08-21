@@ -1,0 +1,56 @@
+<%- include('../../partials/head', { title: 'Blog Manager' }) %>
+
+<div class="row">
+  <div class="col-3 col-md-6 col-sm-12">
+    <div class="card stat-card"><div class="stat-icon accent1"><svg class="ic"><use href="#i-file"/></svg></div><div class="stat-meta"><b><%= stats.total %></b><span>Total Posts</span></div></div>
+  </div>
+  <div class="col-3 col-md-6 col-sm-12">
+    <div class="card stat-card"><div class="stat-icon accent2"><svg class="ic"><use href="#i-eye"/></svg></div><div class="stat-meta"><b><%= stats.published %></b><span>Published</span></div></div>
+  </div>
+  <div class="col-3 col-md-6 col-sm-12">
+    <div class="card stat-card"><div class="stat-icon accent3"><svg class="ic"><use href="#i-chart"/></svg></div><div class="stat-meta"><b><%= stats.views %></b><span>Total Views</span></div></div>
+  </div>
+  <div class="col-3 col-md-6 col-sm-12">
+    <div class="card stat-card"><div class="stat-icon accent4"><svg class="ic"><use href="#i-heart"/></svg></div><div class="stat-meta"><b><%= stats.helpful %></b><span>Helpful Votes</span></div></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <h2><svg class="ic"><use href="#i-book"/></svg> Blog Posts</h2>
+    <a class="btn btn-accent btn-sm" href="/admin/blog/create"><svg class="ic"><use href="#i-plus"/></svg> New Post</a>
+  </div>
+  <div class="card-body">
+    <% if (!posts.length) { %>
+      <p class="hint center">No posts yet. Create your first blog post!</p>
+    <% } else { %>
+    <div class="table-card">
+      <table>
+        <thead><tr><th>Title</th><th>Tags</th><th>Status</th><th>Views</th><th>Published</th><th></th></tr></thead>
+        <tbody>
+          <% posts.forEach(function (p) { %>
+          <tr>
+            <td><b><%= p.title %></b><br><span class="hint">/blog/<%= p.slug %></span></td>
+            <td><% p.tag_list.slice(0, 3).forEach(function (t) { %><span class="badge"><%= t %></span> <% }) %></td>
+            <td><span class="badge <%= p.is_published ? 'green' : 'red' %>"><%= p.is_published ? 'published' : 'draft' %></span></td>
+            <td><%= p.views %></td>
+            <td class="hint"><%= p.fmt(p.published_at) || '—' %></td>
+            <td class="ta-r">
+              <div class="row-actions">
+                <a class="icon-btn" href="/blog/<%= p.slug %>" title="View"><svg class="ic"><use href="#i-eye"/></svg></a>
+                <a class="icon-btn" href="/admin/blog/<%= p.id %>/edit" title="Edit"><svg class="ic"><use href="#i-pencil"/></svg></a>
+                <form method="POST" action="/admin/blog/<%= p.id %>/delete" class="inline" data-confirm="Delete this post?">
+                  <button class="icon-btn danger" title="Delete"><svg class="ic"><use href="#i-trash"/></svg></button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </div>
+</div>
+
+<%- include('../../partials/footer') %>

@@ -27,7 +27,7 @@ const DEFAULT_SETTINGS = {
   transparent_bar: 'on',
   blur_bar: 'on',
   card_radius: '16',
-  accent_color: '#3b82f6',
+  accent_color: '#0044ff',
 
   register_open: 'on',
   maintenance: 'off',

@@ -22,4 +22,6 @@
   </div>
 </div>
 
+<%- include('../../partials/social-comments', { profileUser: member, comments: comments, commentsTotal: commentsTotal, back: '/team/member/' + member.id }) %>
+
 <%- include('../../partials/footer') %>

@@ -21,6 +21,9 @@
       <a class="nav-item <%= active === 'admin-settings' ? 'active' : '' %>" href="/admin/settings"><svg class="ic"><use href="#i-sliders"/></svg> Settings</a>
       <a class="nav-item <%= active === 'admin-content' ? 'active' : '' %>" href="/admin/settings/content"><svg class="ic"><use href="#i-file"/></svg> Content</a>
       <a class="nav-item <%= active === 'admin-tutorials' ? 'active' : '' %>" href="/admin/settings/tutorials"><svg class="ic"><use href="#i-play"/></svg> Tutorials</a>
+      <a class="nav-item <%= active === 'admin-blog' ? 'active' : '' %>" href="/admin/blog"><svg class="ic"><use href="#i-book"/></svg> Blog Manager</a>
+      <a class="nav-item <%= active === 'admin-pages' ? 'active' : '' %>" href="/admin/pages"><svg class="ic"><use href="#i-pencil"/></svg> Page Editors</a>
+      <a class="nav-item <%= active === 'admin-cloudflare' ? 'active' : '' %>" href="/admin/cloudflare"><svg class="ic"><use href="#i-shield"/></svg> Cloudflare</a>
       <a class="nav-item <%= active === 'docs' ? 'active' : '' %>" href="/docs"><svg class="ic"><use href="#i-file"/></svg> Docs</a>
       <a class="nav-item <%= active === 'plans' ? 'active' : '' %>" href="/plans"><svg class="ic"><use href="#i-heart"/></svg> Plans</a>
       <a class="nav-item <%= active === 'admin-activity' ? 'active' : '' %>" href="/admin/activity"><svg class="ic"><use href="#i-activity"/></svg> Activity Log</a>
@@ -36,11 +39,18 @@
       <a class="nav-item <%= active === 'links' ? 'active' : '' %>" href="/links"><svg class="ic"><use href="#i-link"/></svg> Links</a>
       <a class="nav-item <%= active === 'github' ? 'active' : '' %>" href="/github"><svg class="ic"><use href="#i-github"/></svg> GitHub</a>
       <a class="nav-item <%= active === 'docs' ? 'active' : '' %>" href="/docs"><svg class="ic"><use href="#i-file"/></svg> Docs</a>
+      <a class="nav-item <%= active === 'blog' ? 'active' : '' %>" href="/blog"><svg class="ic"><use href="#i-book"/></svg> Blog</a>
       <a class="nav-item <%= active === 'about' ? 'active' : '' %>" href="/about"><svg class="ic"><use href="#i-info"/></svg> About</a>
       <a class="nav-item <%= active === 'plans' ? 'active' : '' %>" href="/plans"><svg class="ic"><use href="#i-heart"/></svg> Plans</a>
       <% (navPages || []).forEach(function(p){ %>
       <a class="nav-item <%= active === p.slug ? 'active' : '' %>" href="/page/<%= p.slug %>"><span class="nav-emoji"><%= p.icon %></span> <%= p.title %></a>
       <% }); %>
+      <%
+        var obsNav = (typeof customNavLinks !== 'undefined' && customNavLinks) ? customNavLinks : [];
+      %>
+      <% obsNav.forEach(function (l) { %>
+      <a class="nav-item" href="<%= l.url %>"<%= l.type === 'external' ? ' target="_blank" rel="noopener noreferrer"' : '' %>><svg class="ic"><use href="#i-link"/></svg> <%= l.label %></a>
+      <% }) %>
       <a class="nav-item <%= active === 'activity' ? 'active' : '' %>" href="/activity"><svg class="ic"><use href="#i-clock"/></svg> Activity</a>
 
       <% if (user) { %>

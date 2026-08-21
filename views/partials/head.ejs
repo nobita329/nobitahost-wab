@@ -7,13 +7,20 @@
 <link rel="icon" href="<%= settings.favicon_url || '/img/favicon.svg' %>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Figtree:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="/css/lucentui.css">
+<script>
+  try {
+    var m = localStorage.getItem('lucent-mode');
+    if (m) document.documentElement.setAttribute('data-theme', m);
+  } catch (e) {}
+</script>
 <style>
   :root { --accent: <%= settings.accent_color || '#3b82f6' %>; --card-radius: <%= (settings.card_radius || '16') %>px; --glass: <%= normalizeBlur(settings) %>px; --overlay: <%= overlayAlpha(settings) %>; }
 </style>
 </head>
-<body class="<%= bodyClass %>">
+<body class="<%= [bodyClass, settings.transparent_bar === 'on' ? 'bar-transparent' : '', settings.blur_bar === 'on' ? 'bar-blur' : ''].filter(Boolean).join(' ') %>">
 <%
   var bgUrl = (bg && bg.url) || '';
   var bgType = (bg && bg.type) || 'image';

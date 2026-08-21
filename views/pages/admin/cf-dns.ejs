@@ -1,0 +1,88 @@
+<%- include('../../partials/head', { title: title }) %>
+
+<%- include('../../partials/cf-head', { base: 'dns', tab, error, query, showZoneSwitcher: true, zonesList: typeof zonesList !== 'undefined' ? zonesList : [], currentZoneId: typeof currentZoneId !== 'undefined' ? currentZoneId : '' }) %>
+
+<% if (tab === 'management') { %>
+<div class="card">
+  <div class="card-head"><h2><svg class="ic"><use href="#i-plus"/></svg> Add Record</h2></div>
+  <div class="card-body">
+    <form method="POST" action="/admin/cloudflare/dns" class="row cf-dns-form">
+      <div class="col-2 col-md-6 col-sm-12"><select name="type">
+        <% ['A','AAAA','CNAME','TXT','MX','NS','SRV','CAA'].forEach(function (t) { %><option><%= t %></option><% }) %>
+      </select></div>
+      <div class="col-3 col-md-6 col-sm-12"><input type="text" name="name" placeholder="Name (e.g. @ or www)" required></div>
+      <div class="col-4 col-md-12 col-sm-12"><input type="text" name="content" placeholder="Content / target" required></div>
+      <div class="col-1 col-md-6 col-sm-6"><label class="switch sm" title="Proxied"><input type="checkbox" name="proxied" checked><span></span></label></div>
+      <div class="col-2 col-md-6 col-sm-6"><button class="btn btn-accent btn-block">Create</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2><svg class="ic"><use href="#i-file"/></svg> DNS Records (<%= records.length %>)</h2></div>
+  <div class="card-body">
+    <% if (!records.length) { %><p class="hint center">No DNS records in this zone.</p><% } else { %>
+    <div class="table-card">
+      <table>
+        <thead><tr><th>Type</th><th>Name</th><th>Content</th><th>Proxy</th><th>TTL</th><th></th></tr></thead>
+        <tbody>
+          <% records.forEach(function (r) { %>
+          <tr>
+            <td><span class="badge"><%= r.type %></span></td>
+            <td class="mono"><%= r.name %></td>
+            <td class="mono cf-content-cell"><%= r.content.length > 60 ? r.content.slice(0, 60) + '…' : r.content %></td>
+            <td><%= r.proxied ? '<span class="badge orange">Proxied</span>' : 'DNS only' %></td>
+            <td><%= r.ttl === 1 ? 'Auto' : r.ttl %></td>
+            <td class="ta-r row-actions">
+              <button class="icon-btn" type="button" title="Edit" onclick="var f=this.closest('tr').querySelector('.cf-edit-row'); f.hidden=!f.hidden;"><svg class="ic"><use href="#i-pencil"/></svg></button>
+              <form method="POST" action="/admin/cloudflare/dns/<%= r.id %>/delete" class="inline" data-confirm="Delete this record?">
+                <button class="icon-btn danger" title="Delete"><svg class="ic"><use href="#i-trash"/></svg></button>
+              </form>
+              <form method="POST" action="/admin/cloudflare/dns/<%= r.id %>/edit" class="cf-edit-row" hidden>
+                <div class="row">
+                  <div class="col-2 col-md-6"><select name="type"><% ['A','AAAA','CNAME','TXT','MX','NS','SRV','CAA'].forEach(function (t) { %><option <%= r.type === t ? 'selected' : '' %>><%= t %></option><% }) %></select></div>
+                  <div class="col-3 col-md-6"><input type="text" name="name" value="<%= r.name %>"></div>
+                  <div class="col-4 col-md-12"><input type="text" name="content" value="<%= r.content %>"></div>
+                  <div class="col-1 col-md-6"><label class="switch sm"><input type="checkbox" name="proxied" <%= r.proxied ? 'checked' : '' %>><span></span></label></div>
+                  <div class="col-2 col-md-6"><button class="btn btn-accent btn-sm btn-block">Save</button></div>
+                </div>
+              </form>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </div>
+</div>
+
+<% } else { %>
+<div class="card">
+  <div class="card-head"><h2><svg class="ic"><use href="#i-chart"/></svg> Zone Traffic (7d)</h2></div>
+  <div class="card-body">
+    <% if (!analytics.length) { %><p class="hint center">No analytics data.</p><% } else { %>
+    <%
+      var maxReq = Math.max.apply(null, analytics.map(function (a) { return a.requests || 1; }));
+      var tot = { requests: 0, pageViews: 0, visitors: 0 };
+      analytics.forEach(function (a) { tot.requests += a.requests; tot.pageViews += a.pageViews; tot.visitors += a.visitors; });
+    %>
+    <div class="cf-chart">
+      <% analytics.forEach(function (a) { %>
+      <div class="cf-bar-col" title="<%= a.date %>: <%= a.requests %> requests">
+        <div class="cf-bar" style="height: <%= Math.max(4, Math.round(a.requests / maxReq * 100)) %>%"></div>
+        <span class="cf-bar-label"><%= a.date.slice(5) %></span>
+      </div>
+      <% }) %>
+    </div>
+    <div class="row cf-totals">
+      <div class="col-3 col-md-6"><b><%= tot.requests.toLocaleString() %></b><span>Requests</span></div>
+      <div class="col-3 col-md-6"><b><%= tot.pageViews.toLocaleString() %></b><span>Page Views</span></div>
+      <div class="col-3 col-md-6"><b><%= tot.visitors.toLocaleString() %></b><span>Visitors</span></div>
+    </div>
+    <% } %>
+  </div>
+</div>
+<% } %>
+
+<%- include('../../partials/footer') %>

@@ -2,6 +2,7 @@
   'use strict';
 
   document.addEventListener('DOMContentLoaded', function () {
+    setupTheme();
     setupSidebar();
     setupDropdown();
     setupModals();
@@ -12,6 +13,32 @@
     setupAlerts();
     setupLiveName();
   });
+
+  function setupTheme() {
+    var root = document.documentElement;
+    var btn = document.getElementById('themeToggle');
+    var lastDark = 'dark';
+    try {
+      var saved = localStorage.getItem('lucent-mode');
+      if (saved && saved !== 'light') lastDark = saved;
+    } catch (e) {}
+
+    function current() { return root.getAttribute('data-theme') || 'dark'; }
+    function syncIcon() {
+      if (!btn) return;
+      var dark = current() !== 'light';
+      btn.innerHTML = '<svg class="ic"><use href="#i-' + (dark ? 'sun' : 'moon') + '"/></svg>';
+    }
+    syncIcon();
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var next = current() === 'light' ? lastDark : 'light';
+      if (current() !== 'light') lastDark = current();
+      root.setAttribute('data-theme', next);
+      try { localStorage.setItem('lucent-mode', next); } catch (e) {}
+      syncIcon();
+    });
+  }
 
   function setupSidebar() {
     var toggle = document.getElementById('sidebarToggle');

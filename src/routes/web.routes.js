@@ -11,6 +11,9 @@ const { getSystemStats, recordSample, getHistory } = require('../system');
 const { getYouTubeData } = require('../youtube');
 const { getRepos: getGithubRepos, getUserStats: getGithubStats } = require('../github');
 const { getSocialData } = require('../social');
+const blog = require('../blog');
+const obsidian = require('../obsidian');
+const cf = require('../cloudflare');
 const { CATEGORIES, fetchWallpapers, getCategoryLabel } = require('../wallpapers');
 const { isValidEmail, isValidUsername } = require('../validate');
 
@@ -81,7 +84,51 @@ router.get('/', track('home'), async (req, res) => {
   } catch (e) {
     social = { youtube: null, instagram: null, github: null, discord: null };
   }
-  pageView(req, res, 'pages/user/home', { title: 'Home', active: 'home', page: cp, stats, social, extraScripts: '<script src="/js/home.js"></script>' });
+  pageView(req, res, 'pages/user/home', { title: 'Home', active: 'home', page: cp, stats, social, blogPosts: blog.latest(3), extraScripts: '<script src="/js/home.js"></script>' });
+});
+
+/* ---------- BLOG (Extras port) ---------- */
+
+router.get('/blog', track('blog'), (req, res) => {
+  const data = blog.listPublished({ search: String(req.query.search || '').trim(), tag: String(req.query.tag || '').trim(), sort: ['latest', 'oldest', 'updated', 'popular'].includes(req.query.sort) ? req.query.sort : 'latest', page: req.query.page });
+  pageView(req, res, 'pages/user/blog', { title: 'Blog', active: 'blog', query: req.query, posts: data.posts, total: data.total, pages: data.pages, pageNum: data.page, tags: data.tags, fmtDate: blog.fmtDate });
+});
+
+router.get('/blog/:slug', track('blog'), (req, res) => {
+  const post = blog.getPublished(req.params.slug);
+  if (!post) return res.status(404).render('pages/errors/404', { title: '404', user: req.user, settings: res.locals.settings, bg: resolveBackground(res.locals.settings) });
+  const vKey = `nh_vb_${post.id}`;
+  if (!req.cookies[vKey]) {
+    blog.recordView(post);
+    res.cookie(vKey, '1', { maxAge: 30 * 24 * 3600 * 1000, httpOnly: true, sameSite: 'lax' });
+  }
+  let myFeedback = null;
+  if (req.cookies.nh_sid) {
+    const row = db.prepare('SELECT is_helpful FROM blog_post_feedback WHERE post_id = ? AND session_id = ?').get(post.id, req.cookies.nh_sid);
+    if (row) myFeedback = !!row.is_helpful;
+  }
+  pageView(req, res, 'pages/user/blog-post', {
+    title: post.seo_title || post.title,
+    active: 'blog',
+    post,
+    myFeedback,
+    metaDescription: post.seo_description || post.description || post.excerpt,
+    fmtDate: blog.fmtDate
+  });
+});
+
+router.post('/blog/:slug/feedback', (req, res) => {
+  const back = safeBack(req.body.back) !== '/' ? safeBack(req.body.back) : `/blog/${req.params.slug}`;
+  const post = db.prepare('SELECT id FROM blog_posts WHERE slug = ? AND is_published = 1').get(req.params.slug);
+  if (!post) return res.redirect('/blog');
+  let sid = req.cookies.nh_sid;
+  if (!sid || sid.length > 64) {
+    sid = require('crypto').randomBytes(16).toString('hex');
+    res.cookie('nh_sid', sid, { maxAge: 365 * 24 * 3600 * 1000, httpOnly: true, sameSite: 'lax' });
+  }
+  const helpful = req.body.helpful === 'no' ? 0 : 1;
+  const changed = blog.saveFeedback(post.id, helpful, sid);
+  res.redirect(`${back}${back.includes('?') ? '&' : '?'}fb=${changed ? (helpful ? 'yes' : 'no') : 'same'}`);
 });
 
 router.get('/team', track('team'), (req, res) => {
@@ -214,7 +261,106 @@ router.post('/github/api-settings', requireAdmin, (req, res) => {
 
 router.get('/about', track('about'), (req, res) => {
   const cp = getUserPage('about');
-  pageView(req, res, 'pages/user/about', { title: 'About', active: 'about', page: cp, query: req.query, isAdmin: req.user && req.user.role === 'admin' });
+  const about = obsidian.parseAbout(obsidian.load('about'));
+  pageView(req, res, 'pages/user/about', { title: about.enabled ? (about.seo_title || 'About') : 'About', active: 'about', page: cp, about, query: req.query, isAdmin: req.user && req.user.role === 'admin' });
+});
+
+/* ---------- OBSIDIAN · TERMS PAGE ---------- */
+
+router.get('/terms', track('terms'), (req, res) => {
+  const terms = obsidian.parseTerms(obsidian.load('terms'));
+  if (!terms.enabled || !terms.sections.length) return res.status(404).render('pages/errors/404', { title: '404', user: req.user, settings: res.locals.settings, bg: resolveBackground(res.locals.settings) });
+  pageView(req, res, 'pages/user/terms', { title: terms.title, active: '', terms });
+});
+
+/* ---------- OBSIDIAN · PAGE EDITORS (admin) ---------- */
+
+function adminEditor(req, res, view, opts) {
+  pageView(req, res, view, { active: 'admin-pages', ...opts });
+}
+
+router.get('/admin/pages', requireAdmin, (req, res) => {
+  adminEditor(req, res, 'pages/admin/pageedit-hub', { title: 'Page Editors' });
+});
+
+router.get('/admin/pages/about', requireAdmin, (req, res) => {
+  const d = { ...obsidian.defaultAbout(), ...(obsidian.load('about') || {}) };
+  adminEditor(req, res, 'pages/admin/pageedit-about', { title: 'About Editor', d, query: req.query });
+});
+
+router.post('/admin/pages/about', requireAdmin, (req, res) => {
+  const b = req.body;
+  const clip = (v, n) => String(v || '').trim().slice(0, n);
+  obsidian.save('about', {
+    enabled: !!b.enabled,
+    seo_title: clip(b.seo_title, 120),
+    hero: {
+      title: clip(b.hero_title, 150), subtitle: clip(b.hero_subtitle, 300), image_url: clip(b.hero_image_url, 500),
+      cta1_label: clip(b.cta1_label, 60), cta1_url: clip(b.cta1_url, 400),
+      cta2_label: clip(b.cta2_label, 60), cta2_url: clip(b.cta2_url, 400)
+    },
+    stats_enabled: !!b.stats_enabled, stats_title: '', stats_text: clip(b.stats_text, 3000),
+    story_enabled: !!b.story_enabled, story_title: clip(b.story_title, 150), story_text: clip(b.story_text, 6000),
+    values_enabled: !!b.values_enabled, values_title: clip(b.values_title, 150), values_text: clip(b.values_text, 4000),
+    team_enabled: !!b.team_enabled, team_title: clip(b.team_title, 150), team_text: clip(b.team_text, 4000),
+    timeline_enabled: !!b.timeline_enabled, timeline_title: clip(b.timeline_title, 150), timeline_text: clip(b.timeline_text, 4000),
+    gallery_enabled: !!b.gallery_enabled, gallery_title: clip(b.gallery_title, 150), gallery_text: clip(b.gallery_text, 4000)
+  });
+  logActivity(req.user, 'Updated About page (editor)', req);
+  res.redirect('/admin/pages/about?saved=1');
+});
+
+router.get('/admin/pages/terms', requireAdmin, (req, res) => {
+  const d = { ...obsidian.defaultTerms(), ...(obsidian.load('terms') || {}) };
+  adminEditor(req, res, 'pages/admin/pageedit-terms', { title: 'Terms Editor', d, query: req.query });
+});
+
+router.post('/admin/pages/terms', requireAdmin, (req, res) => {
+  const b = req.body;
+  const clip = (v, n) => String(v || '').trim().slice(0, n);
+  obsidian.save('terms', {
+    enabled: b.enabled === undefined ? true : !!b.enabled,
+    title: clip(b.title, 150) || 'Terms & Conditions',
+    summary: clip(b.summary, 400),
+    last_updated: clip(b.last_updated, 20),
+    sections_text: clip(b.sections_text, 60000)
+  });
+  logActivity(req.user, 'Updated Terms page (editor)', req);
+  res.redirect('/admin/pages/terms?saved=1');
+});
+
+router.get('/admin/pages/footer', requireAdmin, (req, res) => {
+  const d = { ...obsidian.defaultFooter(), ...(obsidian.load('footer') || {}) };
+  adminEditor(req, res, 'pages/admin/pageedit-footer', { title: 'Footer Editor', d, query: req.query });
+});
+
+router.post('/admin/pages/footer', requireAdmin, (req, res) => {
+  const b = req.body;
+  const clip = (v, n) => String(v || '').trim().slice(0, n);
+  obsidian.save('footer', {
+    enabled: !!b.enabled,
+    copyright: clip(b.copyright, 200),
+    columns_text: clip(b.columns_text, 8000),
+    legal_text: clip(b.legal_text, 2000)
+  });
+  logActivity(req.user, 'Updated Footer (editor)', req);
+  res.redirect('/admin/pages/footer?saved=1');
+});
+
+router.get('/admin/pages/navbar', requireAdmin, (req, res) => {
+  const d = { ...obsidian.defaultNavbar(), ...(obsidian.load('navbar') || {}) };
+  adminEditor(req, res, 'pages/admin/pageedit-navbar', { title: 'Navbar Editor', d, query: req.query });
+});
+
+router.post('/admin/pages/navbar', requireAdmin, (req, res) => {
+  const b = req.body;
+  const clip = (v, n) => String(v || '').trim().slice(0, n);
+  obsidian.save('navbar', {
+    enabled: !!b.enabled,
+    links_text: clip(b.links_text, 4000)
+  });
+  logActivity(req.user, 'Updated Navbar links (editor)', req);
+  res.redirect('/admin/pages/navbar?saved=1');
 });
 
 router.get('/page/:slug', (req, res) => {
@@ -256,7 +402,10 @@ router.get('/activity', (req, res) => {
 });
 
 router.get('/profile', requireAuth, (req, res) => {
-  pageView(req, res, 'pages/user/profile', { title: 'My Profile', active: 'profile', query: req.query });
+  const social = getProfileComments(req.user.id, req.user.id);
+  const cfTokens = db.prepare('SELECT * FROM user_cf_tokens WHERE user_id = ? ORDER BY created_at DESC').all(req.user.id)
+    .map((t) => ({ ...t, token: cf.maskToken(t.token) }));
+  pageView(req, res, 'pages/user/profile', { title: 'My Profile', active: 'profile', query: req.query, comments: social.tree, commentsTotal: social.total, cfTokens });
 });
 
 router.post('/profile', requireAuth, upload.single('profile_pic'), (req, res) => {
@@ -301,6 +450,105 @@ router.get('/profile/2fa/setup', requireAuth, async (req, res) => {
   const keyuri = authenticator.keyuri(req.user.email, req.user.username, secret);
   const qr = await qrcode.toDataURL(keyuri);
   pageView(req, res, 'pages/user/2fa-setup', { title: '2FA Setup', active: 'profile', secret, qr });
+});
+
+/* ---------- SOCIAL · PROFILE COMMENTS (SocialBase port) ---------- */
+
+const REACTION_TYPES = ['like', 'love', 'laugh'];
+
+function safeBack(v) {
+  return typeof v === 'string' && v.startsWith('/') && !v.startsWith('//') ? v : '/';
+}
+
+function timeAgo(s) {
+  const t = new Date(String(s).replace(' ', 'T') + 'Z').getTime();
+  if (isNaN(t)) return '';
+  const sec = Math.max(1, Math.floor((Date.now() - t) / 1000));
+  const steps = [[31536000, 'y'], [2592000, 'mo'], [604800, 'w'], [86400, 'd'], [3600, 'h'], [60, 'm']];
+  for (const [n, l] of steps) if (sec >= n) return Math.floor(sec / n) + l + ' ago';
+  return 'just now';
+}
+
+function getProfileComments(profileUserId, meId) {
+  const rows = db.prepare(`
+    SELECT c.*, u.username, u.profile_pic, u.role
+    FROM profile_comments c JOIN users u ON u.id = c.author_id
+    WHERE c.profile_user_id = ?
+    ORDER BY c.created_at ASC, c.id ASC`).all(profileUserId);
+  const rx = {};
+  if (rows.length) {
+    const ids = rows.map((r) => r.id);
+    const q = ids.map(() => '?').join(',');
+    const rrows = db.prepare(`
+      SELECT comment_id, type, COUNT(*) n, SUM(user_id = ?) mine
+      FROM comment_reactions WHERE comment_id IN (${q})
+      GROUP BY comment_id, type`).all(meId || -1, ...ids);
+    for (const r of rrows) (rx[r.comment_id] = rx[r.comment_id] || []).push({ type: r.type, count: r.n, mine: !!r.mine });
+  }
+  const map = {};
+  for (const r of rows) map[r.id] = { ...r, time_ago: timeAgo(r.created_at), reactions: rx[r.id] || [], replies: [] };
+  const roots = [];
+  for (const r of rows) {
+    const node = map[r.id];
+    if (r.parent_id && map[r.parent_id]) map[r.parent_id].replies.push(node);
+    else roots.push(node);
+  }
+  return { tree: roots.reverse(), total: rows.length };
+}
+
+function canDeleteComment(c, user) {
+  return !!user && (user.role === 'admin' || user.id === c.author_id || user.id === c.profile_user_id);
+}
+
+router.post('/profile/:id/comment', requireAuth, (req, res) => {
+  const back = safeBack(req.body.back);
+  const target = db.prepare('SELECT id FROM users WHERE id = ?').get(req.params.id);
+  if (!target) return res.redirect(back);
+  const content = String(req.body.content || '').trim();
+  if (content.length < 3 || content.length > 1000) return res.redirect(back + (back.includes('?') ? '&' : '?') + 'social_error=len');
+  let parent = null;
+  if (req.body.parent_id) {
+    const p = db.prepare('SELECT id, parent_id FROM profile_comments WHERE id = ? AND profile_user_id = ?').get(req.body.parent_id, target.id);
+    if (p) parent = p.parent_id || p.id;
+  }
+  db.prepare('INSERT INTO profile_comments (profile_user_id, author_id, parent_id, content) VALUES (?, ?, ?, ?)')
+    .run(target.id, req.user.id, parent, content);
+  logActivity(req.user, `Commented on profile #${target.id}`, req);
+  res.redirect(back);
+});
+
+router.post('/profile/comment/:id/edit', requireAuth, (req, res) => {
+  const back = safeBack(req.body.back);
+  const c = db.prepare('SELECT * FROM profile_comments WHERE id = ?').get(req.params.id);
+  if (!c || c.author_id !== req.user.id) return res.redirect(back);
+  const content = String(req.body.content || '').trim();
+  if (content.length >= 3 && content.length <= 1000) {
+    db.prepare("UPDATE profile_comments SET content = ?, is_edited = 1, updated_at = datetime('now') WHERE id = ?").run(content, c.id);
+  }
+  res.redirect(back);
+});
+
+router.post('/profile/comment/:id/delete', requireAuth, (req, res) => {
+  const back = safeBack(req.body.back);
+  const c = db.prepare('SELECT * FROM profile_comments WHERE id = ?').get(req.params.id);
+  if (!c || !canDeleteComment(c, req.user)) return res.redirect(back);
+  const ids = db.prepare('SELECT id FROM profile_comments WHERE id = ? OR parent_id = ?').all(c.id, c.id).map((r) => r.id);
+  const q = ids.map(() => '?').join(',');
+  db.prepare(`DELETE FROM comment_reactions WHERE comment_id IN (${q})`).run(...ids);
+  db.prepare('DELETE FROM profile_comments WHERE id = ? OR parent_id = ?').run(c.id, c.id);
+  res.redirect(back);
+});
+
+router.post('/profile/comment/:id/react', requireAuth, (req, res) => {
+  const back = safeBack(req.body.back);
+  const c = db.prepare('SELECT id FROM profile_comments WHERE id = ?').get(req.params.id);
+  if (!c) return res.redirect(back);
+  const type = REACTION_TYPES.includes(req.body.type) ? req.body.type : 'like';
+  const existing = db.prepare('SELECT * FROM comment_reactions WHERE comment_id = ? AND user_id = ?').get(c.id, req.user.id);
+  if (!existing) db.prepare('INSERT INTO comment_reactions (comment_id, user_id, type) VALUES (?, ?, ?)').run(c.id, req.user.id, type);
+  else if (existing.type === type) db.prepare('DELETE FROM comment_reactions WHERE id = ?').run(existing.id);
+  else db.prepare('UPDATE comment_reactions SET type = ? WHERE id = ?').run(type, existing.id);
+  res.redirect(back);
 });
 
 /* ---------- TEAM ---------- */
@@ -357,7 +605,8 @@ router.post('/team/:id/delete', requireAdmin, (req, res) => {
 router.get('/team/member/:id', (req, res) => {
   const target = db.prepare('SELECT u.*, r.name AS custom_role, r.color AS custom_color FROM users u LEFT JOIN roles r ON r.id = u.custom_role_id WHERE u.id = ?').get(req.params.id);
   if (!target) return res.redirect('/team');
-  pageView(req, res, 'pages/user/member-profile', { title: `Profile · ${target.username}`, active: 'team', member: target, isAdmin: req.user && req.user.role === 'admin' });
+  const social = getProfileComments(target.id, req.user ? req.user.id : null);
+  pageView(req, res, 'pages/user/member-profile', { title: `Profile · ${target.username}`, active: 'team', member: target, isAdmin: req.user && req.user.role === 'admin', comments: social.tree, commentsTotal: social.total });
 });
 
 /* ---------- TEAM ROLES ---------- */
@@ -544,6 +793,9 @@ router.post('/admin/settings', requireAdmin, upload.fields([
   upd.smtp_pass = b.smtp_pass || '';
   upd.mail_from = b.mail_from || '';
   upd.mail_enabled = b.mail_enabled ? 'on' : 'off';
+  upd.cookie_banner = b.cookie_banner ? 'on' : 'off';
+  upd.anti_adblock = b.anti_adblock ? 'on' : 'off';
+  upd.inject_body_code = String(b.inject_body_code || '').slice(0, 5000);
 
   const files = req.files || {};
   if (files.logo_file && files.logo_file[0]) upd.logo_url = `/uploads/${files.logo_file[0].filename}`;
@@ -715,6 +967,340 @@ router.post('/admin/settings/tutorials/:id/delete', requireAdmin, (req, res) => 
   db.prepare('DELETE FROM tutorials WHERE id = ?').run(req.params.id);
   logActivity(req.user, 'Deleted a tutorial', req);
   res.redirect('/admin/settings/tutorials?deleted=1');
+});
+
+/* ---------- CLOUDFLARE ---------- */
+
+router.get('/admin/cloudflare', requireAdmin, async (req, res) => {
+  const cfg = cf.getConfig();
+  const data = { conn: null, connError: null, zone: null, analytics: [], analyticsError: null, zt: null, ztError: null };
+  let zonesCount = 0;
+  if (cfg.apiToken) {
+    try { data.conn = await cf.verifyToken(); } catch (e) { data.connError = e.message; }
+    try { zonesCount = (await cf.listZones()).length; } catch (e) { /* optional */ }
+    try { data.zone = await cf.zoneInfo(); } catch (e) { /* zone optional */ }
+  }
+  if (cfg.apiToken && cfg.zoneId) {
+    try { data.analytics = await cf.webAnalytics(); } catch (e) { data.analyticsError = e.message; }
+  }
+  const userTokens = db.prepare('SELECT t.*, u.username FROM user_cf_tokens t JOIN users u ON u.id = t.user_id ORDER BY t.created_at DESC').all()
+    .map((t) => ({ ...t, token: cf.maskToken(t.token) }));
+  pageView(req, res, 'pages/admin/cloudflare', { title: 'Cloudflare', active: 'admin-cloudflare', cfg, data, userTokens, zonesCount, query: req.query });
+});
+
+router.post('/admin/cloudflare/settings', requireAdmin, (req, res) => {
+  const b = req.body;
+  const clip = (v, n) => String(v || '').trim().slice(0, n);
+  cf.saveConfig({
+    email: clip(b.email, 200),
+    authMode: b.authMode === 'global' ? 'global' : 'token',
+    apiToken: clip(b.apiToken, 200),
+    accountId: clip(b.accountId, 64),
+    zoneId: clip(b.zoneId, 64),
+    analytics_enabled: !!b.analytics_enabled,
+    analyticsToken: clip(b.analyticsToken, 100),
+    zerotrust_enabled: !!b.zerotrust_enabled,
+    ztTeam: clip(b.ztTeam, 200)
+  });
+  logActivity(req.user, 'Updated Cloudflare settings', req);
+  res.redirect('/admin/cloudflare?saved=1');
+});
+
+router.post('/admin/cloudflare/test', requireAdmin, async (req, res) => {
+  try {
+    const result = await cf.verifyToken();
+    res.json({ ok: true, status: result.status });
+  } catch (e) {
+    res.json({ ok: false, error: e.message });
+  }
+});
+
+router.post('/admin/cloudflare/detect', requireAdmin, async (req, res) => {
+  try {
+    const cfg = cf.getConfig();
+    if (!cfg.apiToken) return res.json({ ok: false, error: 'Save an API token first' });
+    const zones = await cf.listZones();
+    if (!zones.length) return res.json({ ok: false, error: 'No zones visible to this token' });
+    const z = zones[0];
+    cf.saveConfig({
+      accountId: z.account_id || '',
+      zoneId: z.id,
+      email: cfg.email,
+      analyticsToken: cfg.analyticsToken,
+      ztTeam: cfg.ztTeam,
+      analytics_enabled: true,
+      zerotrust_enabled: cfg.ztEnabled
+    });
+    logActivity(req.user, `Auto-detected Cloudflare zone ${z.name}`, req);
+    res.json({ ok: true, zone: z.name, zone_status: z.status, account_name: z.account_name || '', zones: zones.map((x) => x.name) });
+  } catch (e) {
+    res.json({ ok: false, error: e.message });
+  }
+});
+
+/* ---------- CLOUDFLARE MANAGEMENT · sub-pages ---------- */
+
+function cfZoneSwitcher(req) {
+  return { zones: [], current: cf.getConfig().zoneId };
+}
+
+router.post('/admin/cloudflare/switch-zone', requireAdmin, (req, res) => {
+  const zid = String(req.body.zoneId || '').trim().slice(0, 64);
+  const cfg = cf.getConfig();
+  cf.saveConfig({ email: cfg.email, authMode: cfg.authMode, accountId: cfg.accountId, zoneId: zid, analyticsToken: cfg.analyticsToken, ztTeam: cfg.ztTeam, analytics_enabled: true, zerotrust_enabled: cfg.ztEnabled });
+  res.redirect(req.get('referer') || '/admin/cloudflare/domains');
+});
+
+/* Zero Trust */
+router.get('/admin/cloudflare/zerotrust', requireAdmin, async (req, res) => {
+  const tab = req.query.tab === 'analytics' ? 'analytics' : 'management';
+  let apps = [], users = [], devices = [], summary = null, error = null;
+  try {
+    if (tab === 'management') {
+      [apps, users, devices] = await Promise.all([cf.ztApps(), cf.ztUsers(), cf.ztDevices()]);
+    } else {
+      summary = await cf.zeroTrust();
+    }
+  } catch (e) { error = e.message; }
+  pageView(req, res, 'pages/admin/cf-zerotrust', { title: 'Zero Trust', active: 'admin-cloudflare', tab, apps, users, devices, summary, error, query: req.query });
+});
+
+router.post('/admin/cloudflare/zerotrust/app/:id/delete', requireAdmin, async (req, res) => {
+  try { await cf.ztAppDelete(req.params.id); } catch (e) { return res.redirect('/admin/cloudflare/zerotrust?error=' + encodeURIComponent(e.message)); }
+  logActivity(req.user, 'Deleted a Cloudflare Access app', req);
+  res.redirect('/admin/cloudflare/zerotrust?deleted=1');
+});
+
+/* Domains */
+router.get('/admin/cloudflare/domains', requireAdmin, async (req, res) => {
+  const tab = req.query.tab === 'analytics' ? 'analytics' : 'management';
+  let zones = [], stats = [], error = null;
+  try {
+    if (tab === 'management') zones = await cf.listZones();
+    else stats = await cf.domainStats();
+  } catch (e) { error = e.message; }
+  pageView(req, res, 'pages/admin/cf-domains', { title: 'Domains', active: 'admin-cloudflare', tab, zones, stats, error, query: req.query });
+});
+
+/* DNS */
+router.get('/admin/cloudflare/dns', requireAdmin, async (req, res) => {
+  const tab = req.query.tab === 'analytics' ? 'analytics' : 'management';
+  let records = [], analytics = [], error = null;
+  try {
+    if (tab === 'management') records = await cf.dnsList();
+    else analytics = await cf.webAnalytics();
+  } catch (e) { error = e.message; }
+  let zonesList = []; try { zonesList = await cf.listZones(); } catch (e) {}
+  pageView(req, res, 'pages/admin/cf-dns', { title: 'DNS Records', active: 'admin-cloudflare', tab, records, analytics, error, query: req.query, zonesList, currentZoneId: cf.getConfig().zoneId });
+});
+
+router.post('/admin/cloudflare/dns', requireAdmin, async (req, res) => {
+  const b = req.body;
+  try {
+    await cf.dnsCreate({ type: b.type, name: b.name, content: b.content, ttl: b.ttl, proxied: b.proxied });
+    logActivity(req.user, `Created DNS ${b.type} record for ${b.name}`, req);
+  } catch (e) { return res.redirect('/admin/cloudflare/dns?error=' + encodeURIComponent(e.message)); }
+  res.redirect('/admin/cloudflare/dns?created=1');
+});
+
+router.post('/admin/cloudflare/dns/:id/edit', requireAdmin, async (req, res) => {
+  const b = req.body;
+  try {
+    await cf.dnsUpdate(req.params.id, { type: b.type, name: b.name, content: b.content, ttl: b.ttl, proxied: b.proxied });
+    logActivity(req.user, `Updated DNS record ${b.name}`, req);
+  } catch (e) { return res.redirect('/admin/cloudflare/dns?error=' + encodeURIComponent(e.message)); }
+  res.redirect('/admin/cloudflare/dns?saved=1');
+});
+
+router.post('/admin/cloudflare/dns/:id/delete', requireAdmin, async (req, res) => {
+  try { await cf.dnsDelete(req.params.id); logActivity(req.user, 'Deleted a DNS record', req); }
+  catch (e) { return res.redirect('/admin/cloudflare/dns?error=' + encodeURIComponent(e.message)); }
+  res.redirect('/admin/cloudflare/dns?deleted=1');
+});
+
+/* DDoS */
+router.get('/admin/cloudflare/ddos', requireAdmin, async (req, res) => {
+  const tab = req.query.tab === 'management' ? 'management' : 'analytics';
+  let analytics = [], settingsMap = {}, error = null;
+  try {
+    if (tab === 'analytics') analytics = await cf.webAnalytics();
+    else settingsMap = await cf.zoneSettings();
+  } catch (e) { error = e.message; }
+  let zonesList = []; try { zonesList = await cf.listZones(); } catch (e) {}
+  pageView(req, res, 'pages/admin/cf-ddos', { title: 'DDoS Protection', active: 'admin-cloudflare', tab, analytics, settingsMap, error, query: req.query, zonesList, currentZoneId: cf.getConfig().zoneId });
+});
+
+router.post('/admin/cloudflare/ddos/level', requireAdmin, async (req, res) => {
+  try { await cf.zoneSetSetting('security_level', req.body.level || 'medium'); logActivity(req.user, `Set Cloudflare security level to ${req.body.level}`, req); }
+  catch (e) { return res.redirect('/admin/cloudflare/ddos?tab=management&error=' + encodeURIComponent(e.message)); }
+  res.redirect('/admin/cloudflare/ddos?tab=management&saved=1');
+});
+
+/* Security */
+router.get('/admin/cloudflare/security', requireAdmin, async (req, res) => {
+  const tab = req.query.tab === 'analytics' ? 'analytics' : 'management';
+  let rules = [], arules = [], events = [], settingsMap = {}, error = null;
+  try {
+    if (tab === 'management') [rules, arules] = await Promise.all([cf.fwRules(), cf.accessRules()]);
+    else {
+      [events, settingsMap] = await Promise.all([cf.securityEvents(), cf.zoneSettings()]);
+    }
+  } catch (e) { error = e.message; }
+  let zonesList = []; try { zonesList = await cf.listZones(); } catch (e) {}
+  pageView(req, res, 'pages/admin/cf-security', { title: 'Security', active: 'admin-cloudflare', tab, rules, arules, events, settingsMap, error, query: req.query, zonesList, currentZoneId: cf.getConfig().zoneId });
+});
+
+router.post('/admin/cloudflare/security/access', requireAdmin, async (req, res) => {
+  try {
+    await cf.accessRuleCreate({ mode: req.body.mode, value: req.body.value, notes: req.body.notes });
+    logActivity(req.user, `Added Cloudflare IP access rule (${req.body.mode})`, req);
+  } catch (e) { return res.redirect('/admin/cloudflare/security?error=' + encodeURIComponent(e.message)); }
+  res.redirect('/admin/cloudflare/security?created=1');
+});
+
+router.post('/admin/cloudflare/security/access/:id/delete', requireAdmin, async (req, res) => {
+  try { await cf.accessRuleDelete(req.params.id); logActivity(req.user, 'Removed a Cloudflare IP access rule', req); }
+  catch (e) { return res.redirect('/admin/cloudflare/security?error=' + encodeURIComponent(e.message)); }
+  res.redirect('/admin/cloudflare/security?deleted=1');
+});
+
+router.post('/admin/cloudflare/security/rule/:id/toggle', requireAdmin, async (req, res) => {
+  try { await cf.fwRuleToggle(req.params.id, req.body.paused === '1'); }
+  catch (e) { return res.redirect('/admin/cloudflare/security?error=' + encodeURIComponent(e.message)); }
+  res.redirect('/admin/cloudflare/security');
+});
+
+router.post('/admin/cloudflare/security/rule/:id/delete', requireAdmin, async (req, res) => {
+  try { await cf.fwRuleDelete(req.params.id); logActivity(req.user, 'Deleted a Cloudflare firewall rule', req); }
+  catch (e) { return res.redirect('/admin/cloudflare/security?error=' + encodeURIComponent(e.message)); }
+  res.redirect('/admin/cloudflare/security?deleted=1');
+});
+
+/* Settings */
+router.get('/admin/cloudflare/settings-page', requireAdmin, async (req, res) => {
+  const cfg = cf.getConfig();
+  let settingsMap = {}, error = null, zone = null;
+  try { settingsMap = await cf.zoneSettings(); } catch (e) { error = e.message; }
+  try { zone = await cf.zoneInfo(); } catch (e) { /* optional */ }
+  const userTokens = db.prepare('SELECT t.*, u.username FROM user_cf_tokens t JOIN users u ON u.id = t.user_id ORDER BY t.created_at DESC').all()
+    .map((t) => ({ ...t, token: cf.maskToken(t.token) }));
+  const maskedApiToken = cfg.apiToken ? cf.maskToken(cfg.apiToken) : '';
+  pageView(req, res, 'pages/admin/cf-settings', { title: 'CF Settings', active: 'admin-cloudflare', cfg, settingsMap, error, userTokens, maskedApiToken, data: { zone }, query: req.query });
+});
+
+router.post('/admin/cloudflare/settings-page/update', requireAdmin, async (req, res) => {
+  const allowed = ['security_level', 'ssl', 'cache_level', 'always_online', 'browser_check', 'development_mode', 'automatic_https_rewrites', 'brotli', 'early_hints', 'http2', 'http3', '0rtt', 'ipv6', 'websockets', 'min_tls_version'];
+  const updates = [];
+  Object.keys(req.body).forEach((k) => { if (allowed.includes(k)) updates.push([k, req.body[k]]); });
+  const errors = [];
+  for (const [k, v] of updates) {
+    try { await cf.zoneSetSetting(k, v); } catch (e) { errors.push(k + ': ' + e.message); }
+  }
+  if (updates.length) logActivity(req.user, `Updated Cloudflare zone settings (${updates.map((u) => u[0]).join(', ')})`, req);
+  if (errors.length) return res.redirect('/admin/cloudflare/settings-page?error=' + encodeURIComponent(errors[0]));
+  res.redirect('/admin/cloudflare/settings-page?saved=1');
+});
+
+/* Accounts */
+router.get('/admin/cloudflare/accounts', requireAdmin, async (req, res) => {
+  const tab = req.query.tab === 'analytics' ? 'analytics' : 'management';
+  let accs = [], members = [], stats = [], error = null;
+  try {
+    accs = await cf.accounts();
+    if (tab === 'management') members = await cf.accountMembers(cf.getConfig().accountId || (accs[0] && accs[0].id));
+    else stats = await cf.domainStats(20);
+  } catch (e) { error = e.message; }
+  pageView(req, res, 'pages/admin/cf-accounts', { title: 'Accounts', active: 'admin-cloudflare', tab, accs, members, stats, error, currentAccountId: cf.getConfig().accountId, query: req.query });
+});
+
+/* ---------- USER CF TOKENS (any logged-in user) ---------- */
+
+router.post('/profile/cf-token', requireAuth, (req, res) => {
+  const token = String(req.body.token || '').trim().slice(0, 200);
+  const label = String(req.body.label || '').trim().slice(0, 60);
+  if (!token) return res.redirect('/profile?cferror=1');
+  const count = db.prepare('SELECT COUNT(*) c FROM user_cf_tokens WHERE user_id = ?').get(req.user.id).c;
+  if (count >= 5) return res.redirect('/profile?cflimit=1');
+  db.prepare('INSERT INTO user_cf_tokens (user_id, label, token) VALUES (?, ?, ?)').run(req.user.id, label, token);
+  logActivity(req.user, 'Added a Cloudflare API token', req);
+  res.redirect('/profile?cfsaved=1#cloudflare');
+});
+
+router.post('/profile/cf-token/:id/delete', requireAuth, (req, res) => {
+  const row = db.prepare('SELECT * FROM user_cf_tokens WHERE id = ?').get(req.params.id);
+  if (!row || (row.user_id !== req.user.id && req.user.role !== 'admin')) return res.redirect('/profile?cferror=1');
+  db.prepare('DELETE FROM user_cf_tokens WHERE id = ?').run(row.id);
+  logActivity(req.user, 'Removed a Cloudflare API token', req);
+  res.redirect('/profile?cfdeleted=1#cloudflare');
+});
+
+/* ---------- BLOG MANAGEMENT ---------- */
+
+router.get('/admin/blog', requireAdmin, (req, res) => {
+  const posts = db.prepare('SELECT * FROM blog_posts ORDER BY created_at DESC, id DESC').all()
+    .map((p) => ({ ...p, tag_list: blog.parseTags(p), excerpt: blog.excerpt(p, 120), fmt: blog.fmtDate }));
+  const fb = db.prepare('SELECT SUM(is_helpful = 1) helpful, SUM(is_helpful = 0) unhelpful FROM blog_post_feedback').get();
+  pageView(req, res, 'pages/admin/blog', { title: 'Blog Manager', active: 'admin-blog', posts, query: req.query, stats: { total: posts.length, published: posts.filter((p) => p.is_published).length, views: posts.reduce((a, p) => a + p.views, 0), helpful: fb.helpful || 0 } });
+});
+
+router.get('/admin/blog/create', requireAdmin, (req, res) => {
+  pageView(req, res, 'pages/admin/blog-form', { title: 'New Post', active: 'admin-blog', post: null, query: req.query });
+});
+
+function blogFields(b) {
+  return {
+    title: String(b.title || '').trim(),
+    slug: String(b.slug || '').trim(),
+    description: String(b.description || '').trim().slice(0, 255),
+    cover_image_url: String(b.cover_image_url || '').trim(),
+    seo_title: String(b.seo_title || '').trim().slice(0, 255),
+    seo_description: String(b.seo_description || '').trim().slice(0, 320),
+    seo_keywords: String(b.seo_keywords || '').trim().slice(0, 500),
+    content: String(b.content || ''),
+    tags: String(b.tags || '').split(',').map((t) => t.trim()).filter(Boolean).join(', '),
+    is_published: b.is_published ? 1 : 0
+  };
+}
+
+router.post('/admin/blog/create', requireAdmin, (req, res) => {
+  const f = blogFields(req.body);
+  if (!f.title || !f.content) return res.redirect('/admin/blog/create?error=fields');
+  const slug = f.slug ? blog.uniqueSlug(f.slug) : blog.uniqueSlug(f.title);
+  db.prepare(`INSERT INTO blog_posts (title, slug, description, cover_image_url, seo_title, seo_description, seo_keywords, content, tags, is_published, published_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    .run(f.title, slug, f.description, f.cover_image_url, f.seo_title, f.seo_description, f.seo_keywords, f.content, f.tags, f.is_published, f.is_published ? new Date().toISOString().slice(0, 19).replace('T', ' ') : null);
+  logActivity(req.user, `Created blog post "${f.title}"`, req);
+  res.redirect('/admin/blog?created=1');
+});
+
+router.get('/admin/blog/:id/edit', requireAdmin, (req, res) => {
+  const post = db.prepare('SELECT * FROM blog_posts WHERE id = ?').get(req.params.id);
+  if (!post) return res.redirect('/admin/blog');
+  pageView(req, res, 'pages/admin/blog-form', { title: `Edit · ${post.title}`, active: 'admin-blog', post, query: req.query });
+});
+
+router.post('/admin/blog/:id/edit', requireAdmin, (req, res) => {
+  const target = db.prepare('SELECT * FROM blog_posts WHERE id = ?').get(req.params.id);
+  if (!target) return res.redirect('/admin/blog');
+  const f = blogFields(req.body);
+  if (!f.title || !f.content) return res.redirect(`/admin/blog/${target.id}/edit?error=fields`);
+  const slug = f.slug ? blog.uniqueSlug(f.slug, target.id) : blog.uniqueSlug(f.title, target.id);
+  const publishedAt = f.is_published
+    ? (target.published_at || new Date().toISOString().slice(0, 19).replace('T', ' '))
+    : null;
+  db.prepare(`UPDATE blog_posts SET title = ?, slug = ?, description = ?, cover_image_url = ?, seo_title = ?, seo_description = ?, seo_keywords = ?, content = ?, tags = ?, is_published = ?, published_at = ?, updated_at = datetime('now') WHERE id = ?`)
+    .run(f.title, slug, f.description, f.cover_image_url, f.seo_title, f.seo_description, f.seo_keywords, f.content, f.tags, f.is_published, publishedAt, target.id);
+  logActivity(req.user, `Edited blog post "${f.title}"`, req);
+  res.redirect('/admin/blog?saved=1');
+});
+
+router.post('/admin/blog/:id/delete', requireAdmin, (req, res) => {
+  const target = db.prepare('SELECT * FROM blog_posts WHERE id = ?').get(req.params.id);
+  if (!target) return res.redirect('/admin/blog');
+  db.prepare('DELETE FROM blog_post_feedback WHERE post_id = ?').run(target.id);
+  db.prepare('DELETE FROM blog_posts WHERE id = ?').run(target.id);
+  logActivity(req.user, `Deleted blog post "${target.title}"`, req);
+  res.redirect('/admin/blog?deleted=1');
 });
 
 /* ---------- LINKS MANAGEMENT ---------- */

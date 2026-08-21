@@ -88,7 +88,47 @@
         <% } %>
       </div>
     </div>
+    <div class="card" id="cloudflare">
+      <div class="card-head"><h2><svg class="ic"><use href="#i-shield"/></svg> Cloudflare</h2></div>
+      <div class="card-body">
+        <% if (query.cfsaved) { %><div class="alert alert-success">Token added.</div><% } %>
+        <% if (query.cfdeleted) { %><div class="alert alert-success">Token removed.</div><% } %>
+        <% if (query.cflimit) { %><div class="alert alert-error">Limit reached — max 5 tokens.</div><% } %>
+        <% if (query.cferror) { %><div class="alert alert-error">Something went wrong.</div><% } %>
+        <p>Add your Cloudflare API token to use Cloudflare-powered features. Tokens are stored securely and always shown masked.</p>
+        <% if (cfTokens.length) { %>
+        <div class="table-card">
+          <table>
+            <thead><tr><th>Label</th><th>Token</th><th>Added</th><th></th></tr></thead>
+            <tbody>
+              <% cfTokens.forEach(function (t) { %>
+              <tr>
+                <td><%= t.label || '—' %></td>
+                <td class="mono"><%= t.token %></td>
+                <td><%= t.created_at.slice(0, 10) %></td>
+                <td class="ta-r">
+                  <form method="POST" action="/profile/cf-token/<%= t.id %>/delete" class="inline" data-confirm="Remove this token?">
+                    <button class="icon-btn danger" title="Remove"><svg class="ic"><use href="#i-trash"/></svg></button>
+                  </form>
+                </td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+        <% } else { %>
+        <p class="hint center">No tokens yet.</p>
+        <% } %>
+        <form method="POST" action="/profile/cf-token" class="row cf-add-row">
+          <div class="col-4 col-md-6 col-sm-12"><input type="text" name="label" maxlength="60" placeholder="Label (e.g. Personal Zone)"></div>
+          <div class="col-6 col-md-6 col-sm-12"><input type="password" name="token" maxlength="200" placeholder="Paste API token" required></div>
+          <div class="col-2 col-md-12 col-sm-12"><button class="btn btn-accent btn-block" type="submit"><svg class="ic"><use href="#i-plus"/></svg> Add</button></div>
+        </form>
+      </div>
+    </div>
   </div>
 </div>
+
+<%- include('../../partials/social-comments', { profileUser: user, comments: comments, commentsTotal: commentsTotal, back: '/profile' }) %>
 
 <%- include('../../partials/footer') %>

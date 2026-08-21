@@ -4,6 +4,7 @@
     <h1 class="page-title"><%= title %></h1>
   </div>
   <div class="tb-right">
+    <button class="icon-btn" id="themeToggle" aria-label="Toggle dark / light mode"><svg class="ic"><use href="#i-sun"/></svg></button>
     <% if (user && user.role === 'admin') { %>
     <a class="btn btn-ghost btn-sm hide-mobile" href="/admin/create"><svg class="ic"><use href="#i-user-plus"/></svg> Create User</a>
     <% } %>

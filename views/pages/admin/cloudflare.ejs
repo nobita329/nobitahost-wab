@@ -1,0 +1,136 @@
+<%- include('../../partials/head', { title: 'Cloudflare' }) %>
+
+<% if (query.saved) { %><div class="alert alert-success">Cloudflare settings saved.</div><% } %>
+
+<div class="row">
+  <div class="col-3 col-md-6 col-sm-12">
+    <div class="card stat-card"><div class="stat-icon accent1"><svg class="ic"><use href="#i-shield"/></svg></div><div class="stat-meta"><b><%= data.conn ? data.conn.status : '—' %></b><span>API Status</span></div></div>
+  </div>
+  <div class="col-3 col-md-6 col-sm-12">
+    <div class="card stat-card"><div class="stat-icon accent2"><svg class="ic"><use href="#i-link"/></svg></div><div class="stat-meta"><b><%= zonesCount %></b><span>Domains</span></div></div>
+  </div>
+  <div class="col-3 col-md-6 col-sm-12">
+    <div class="card stat-card"><div class="stat-icon accent3"><svg class="ic"><use href="#i-eye"/></svg></div><div class="stat-meta"><b><%= cfg.analyticsEnabled ? 'On' : 'Off' %></b><span>Web Analytics</span></div></div>
+  </div>
+  <div class="col-3 col-md-6 col-sm-12">
+    <div class="card stat-card"><div class="stat-icon accent4"><svg class="ic"><use href="#i-users"/></svg></div><div class="stat-meta"><b><%= userTokens.length %></b><span>User Tokens</span></div></div>
+  </div>
+</div>
+
+<div class="row cf-nav-grid">
+  <div class="col-3 col-md-6 col-sm-12">
+    <a class="card pe-hub-card" href="/admin/cloudflare/zerotrust">
+      <span class="stat-icon accent1"><svg class="ic"><use href="#i-shield"/></svg></span>
+      <b>Zero Trust</b>
+      <p class="hint">Access apps, users & devices — manage and monitor.</p>
+    </a>
+  </div>
+  <div class="col-3 col-md-6 col-sm-12">
+    <a class="card pe-hub-card" href="/admin/cloudflare/domains">
+      <span class="stat-icon accent2"><svg class="ic"><use href="#i-link"/></svg></span>
+      <b>Domains</b>
+      <p class="hint">All <%= zonesCount %> domains with per-domain traffic analytics.</p>
+    </a>
+  </div>
+  <div class="col-3 col-md-6 col-sm-12">
+    <a class="card pe-hub-card" href="/admin/cloudflare/dns">
+      <span class="stat-icon accent3"><svg class="ic"><use href="#i-file"/></svg></span>
+      <b>DNS / Records</b>
+      <p class="hint">Full DNS management — create, edit, delete records live.</p>
+    </a>
+  </div>
+  <div class="col-3 col-md-6 col-sm-12">
+    <a class="card pe-hub-card" href="/admin/cloudflare/ddos">
+      <span class="stat-icon accent4"><svg class="ic"><use href="#i-shield"/></svg></span>
+      <b>DDoS Protection</b>
+      <p class="hint">Protection level control + threats blocked chart.</p>
+    </a>
+  </div>
+  <div class="col-3 col-md-6 col-sm-12">
+    <a class="card pe-hub-card" href="/admin/cloudflare/security">
+      <span class="stat-icon accent2"><svg class="ic"><use href="#i-lock"/></svg></span>
+      <b>Security</b>
+      <p class="hint">IP rules, WAF rules and security events analytics.</p>
+    </a>
+  </div>
+  <div class="col-3 col-md-6 col-sm-12">
+    <a class="card pe-hub-card" href="/admin/cloudflare/settings-page">
+      <span class="stat-icon accent1"><svg class="ic"><use href="#i-pencil"/></svg></span>
+      <b>Settings</b>
+      <p class="hint">Connection, zone settings (SSL/cache), beacon & tokens.</p>
+    </a>
+  </div>
+  <div class="col-3 col-md-6 col-sm-12">
+    <a class="card pe-hub-card" href="/admin/cloudflare/accounts">
+      <span class="stat-icon accent3"><svg class="ic"><use href="#i-users"/></svg></span>
+      <b>Accounts</b>
+      <p class="hint">Account info, members and aggregated traffic.</p>
+    </a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <h2><svg class="ic"><use href="#i-chart"/></svg> Active Zone · <%= data.zone ? data.zone.name : 'Not set' %></h2>
+    <% if (data.zone) { %><span class="badge green"><%= data.zone.status %></span><% } %>
+  </div>
+  <div class="card-body">
+    <% if (data.connError) { %><p class="hint" style="color: var(--danger)">⚠ <%= data.connError %></p><% } %>
+    <% if (!cfg.apiToken) { %>
+      <p class="hint center">No API credentials configured. Add them in <a href="/admin/cloudflare/settings-page">Settings</a>.</p>
+    <% } else if (data.analytics.length) { %>
+    <%
+      var maxReq = Math.max.apply(null, data.analytics.map(function (a) { return a.requests || 1; }));
+      var tot = { requests: 0, pageViews: 0, visitors: 0, threats: 0 };
+      data.analytics.forEach(function (a) { tot.requests += a.requests; tot.pageViews += a.pageViews; tot.visitors += a.visitors; tot.threats += a.threats; });
+    %>
+    <div class="cf-chart">
+      <% data.analytics.forEach(function (a) { %>
+      <div class="cf-bar-col" title="<%= a.date %>: <%= a.requests %> requests">
+        <div class="cf-bar" style="height: <%= Math.max(4, Math.round(a.requests / maxReq * 100)) %>%"></div>
+        <span class="cf-bar-label"><%= a.date.slice(5) %></span>
+      </div>
+      <% }) %>
+    </div>
+    <div class="row cf-totals">
+      <div class="col-3 col-md-6"><b><%= tot.requests.toLocaleString() %></b><span>Requests (7d)</span></div>
+      <div class="col-3 col-md-6"><b><%= tot.pageViews.toLocaleString() %></b><span>Page Views</span></div>
+      <div class="col-3 col-md-6"><b><%= tot.visitors.toLocaleString() %></b><span>Visitors</span></div>
+      <div class="col-3 col-md-6"><b><%= tot.threats.toLocaleString() %></b><span>Threats</span></div>
+    </div>
+    <% } else { %>
+    <p class="hint center">No traffic data for this zone in the last 7 days.</p>
+    <% } %>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2><svg class="ic"><use href="#i-link"/></svg> User Tokens</h2></div>
+  <div class="card-body">
+    <% if (!userTokens.length) { %>
+      <p class="hint center">Kisi user ne abhi token add nahi kiya. Har user apne profile → Cloudflare me apna token add kar sakta hai (max 5).</p>
+    <% } else { %>
+    <div class="table-card">
+      <table>
+        <thead><tr><th>User</th><th>Label</th><th>Token</th><th></th></tr></thead>
+        <tbody>
+          <% userTokens.forEach(function (t) { %>
+          <tr>
+            <td><%= t.username %></td>
+            <td><%= t.label || '—' %></td>
+            <td class="mono"><%= t.token %></td>
+            <td class="ta-r">
+              <form method="POST" action="/profile/cf-token/<%= t.id %>/delete" class="inline">
+                <button class="icon-btn danger" title="Delete"><svg class="ic"><use href="#i-trash"/></svg></button>
+              </form>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </div>
+</div>
+
+<%- include('../../partials/footer') %>

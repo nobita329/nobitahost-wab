@@ -1,0 +1,129 @@
+<%- include('../../partials/head', { title: title }) %>
+
+<%- include('../../partials/cf-head', { base: 'security', tab, error, query, showZoneSwitcher: true, zonesList: typeof zonesList !== 'undefined' ? zonesList : [], currentZoneId: typeof currentZoneId !== 'undefined' ? currentZoneId : '' }) %>
+
+<% if (tab === 'management') { %>
+<div class="card">
+  <div class="card-head"><h2><svg class="ic"><use href="#i-plus"/></svg> Add IP Access Rule</h2></div>
+  <div class="card-body">
+    <form method="POST" action="/admin/cloudflare/security/access" class="row cf-dns-form">
+      <div class="col-3 col-md-6 col-sm-12"><select name="mode">
+        <option value="block">Block</option>
+        <option value="challenge">Challenge</option>
+        <option value="js_challenge">JS Challenge</option>
+        <option value="managed_challenge">Managed Challenge</option>
+        <option value="allow">Allow (whitelist)</option>
+      </select></div>
+      <div class="col-4 col-md-6 col-sm-12"><input type="text" name="value" placeholder="IP address (e.g. 1.2.3.4)" required></div>
+      <div class="col-3 col-md-6 col-sm-12"><input type="text" name="notes" placeholder="Notes (optional)"></div>
+      <div class="col-2 col-md-12 col-sm-12"><button class="btn btn-accent btn-block">Add Rule</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-6 col-md-12">
+    <div class="card">
+      <div class="card-head"><h2><svg class="ic"><use href="#i-shield"/></svg> IP Access Rules (<%= arules.length %>)</h2></div>
+      <div class="card-body">
+        <% if (!arules.length) { %><p class="hint center">No IP rules.</p><% } else { %>
+        <div class="table-card">
+          <table>
+            <thead><tr><th>IP</th><th>Mode</th><th>Notes</th><th></th></tr></thead>
+            <tbody>
+              <% arules.forEach(function (r) { %>
+              <tr>
+                <td class="mono"><%= r.configuration && r.configuration.value %></td>
+                <td><span class="badge <%= r.mode === 'block' ? 'red' : (r.mode === 'allow' ? 'green' : 'orange') %>"><%= r.mode %></span></td>
+                <td><%= r.notes || '—' %></td>
+                <td class="ta-r">
+                  <form method="POST" action="/admin/cloudflare/security/access/<%= r.id %>/delete" class="inline" data-confirm="Remove this rule?">
+                    <button class="icon-btn danger"><svg class="ic"><use href="#i-trash"/></svg></button>
+                  </form>
+                </td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6 col-md-12">
+    <div class="card">
+      <div class="card-head"><h2><svg class="ic"><use href="#i-file"/></svg> WAF Firewall Rules (<%= rules.length %>)</h2></div>
+      <div class="card-body">
+        <% if (!rules.length) { %><p class="hint center">No custom firewall rules. Create them in the Cloudflare dashboard → Security → WAF.</p><% } else { %>
+        <div class="table-card">
+          <table>
+            <thead><tr><th>Rule</th><th>Action</th><th>State</th><th></th></tr></thead>
+            <tbody>
+              <% rules.forEach(function (r) { %>
+              <tr>
+                <td title="<%= r.expression %>"><%= r.description || r.expression.slice(0, 40) + '…' %></td>
+                <td><span class="badge orange"><%= r.action %></span></td>
+                <td><span class="badge <%= r.paused ? '' : 'green' %>"><%= r.paused ? 'Paused' : 'Active' %></span></td>
+                <td class="ta-r row-actions">
+                  <form method="POST" action="/admin/cloudflare/security/rule/<%= r.id %>/toggle" class="inline">
+                    <input type="hidden" name="paused" value="<%= r.paused ? '0' : '1' %>">
+                    <button class="icon-btn" title="<%= r.paused ? 'Resume' : 'Pause' %>"><svg class="ic"><use href="#i-eye"/></svg></button>
+                  </form>
+                  <form method="POST" action="/admin/cloudflare/security/rule/<%= r.id %>/delete" class="inline" data-confirm="Delete this rule?">
+                    <button class="icon-btn danger"><svg class="ic"><use href="#i-trash"/></svg></button>
+                  </form>
+                </td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<% } else { %>
+<div class="card">
+  <div class="card-head"><h2><svg class="ic"><use href="#i-chart"/></svg> Security Events by Action (7d)</h2></div>
+  <div class="card-body">
+    <% if (!events.length) { %><p class="hint center">No security events recorded (or not available on this plan).</p><% } else { %>
+    <%
+      var maxC = Math.max.apply(null, events.map(function (e) { return e.count || 1; }));
+      var tot = 0; events.forEach(function (e) { tot += e.count; });
+    %>
+    <div class="cf-chart">
+      <% events.forEach(function (e) { %>
+      <div class="cf-bar-col" title="<%= e.dimensions.action %>: <%= e.count %>">
+        <div class="cf-bar red" style="height: <%= Math.max(4, Math.round(e.count / maxC * 100)) %>%"></div>
+        <span class="cf-bar-label"><%= e.dimensions.action %></span>
+      </div>
+      <% }) %>
+    </div>
+    <div class="row cf-totals">
+      <div class="col-4 col-md-4"><b><%= tot.toLocaleString() %></b><span>Total events (7d)</span></div>
+    </div>
+    <% } %>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2><svg class="ic"><use href="#i-shield"/></svg> Current Posture</h2></div>
+  <div class="card-body">
+    <div class="table-card">
+      <table>
+        <thead><tr><th>Setting</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>Security Level</td><td><span class="badge orange"><%= settingsMap.security_level || '—' %></span></td></tr>
+          <tr><td>Browser Integrity Check</td><td><span class="badge <%= settingsMap.browser_check === 'on' ? 'green' : '' %>"><%= settingsMap.browser_check || '—' %></span></td></tr>
+          <tr><td>WAF Managed Rules</td><td><span class="hint">See CF dashboard for per-rule status</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<% } %>
+
+<%- include('../../partials/footer') %>

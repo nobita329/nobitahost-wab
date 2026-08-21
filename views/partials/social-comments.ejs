@@ -1,0 +1,32 @@
+<%
+var RX_EMOJI = { like: '👍', love: '❤️', laugh: '😂' };
+var REACTION_TYPES = ['like', 'love', 'laugh'];
+var pcBack = typeof back !== 'undefined' ? back : '/profile';
+%>
+<div class="card pc-card" id="comments">
+  <div class="card-head"><h2><svg class="ic"><use href="#i-chat"/></svg> Comments <span class="pc-count"><%= commentsTotal %></span></h2></div>
+  <div class="card-body">
+    <% if (user) { %>
+    <form method="POST" action="/profile/<%= profileUser.id %>/comment" class="pc-form">
+      <input type="hidden" name="back" value="<%= pcBack %>">
+      <img class="avatar sm" src="<%= user.profile_pic || '/img/avatar.svg' %>" alt="">
+      <div class="pc-form-main">
+        <textarea name="content" rows="3" maxlength="1000" minlength="3" placeholder="Write a comment…" required></textarea>
+        <div class="pc-form-actions"><button class="btn btn-accent btn-sm" type="submit">Post Comment</button></div>
+      </div>
+    </form>
+    <% if (locals.query && locals.query.social_error === 'len') { %><p class="pc-error">Comment must be 3–1000 characters.</p><% } %>
+    <% } else { %>
+    <p class="hint center"><a href="/login">Login</a> to join the conversation.</p>
+    <% } %>
+
+    <div class="pc-list">
+      <% if (!comments.length) { %>
+        <p class="pc-empty">No comments yet. Be the first!</p>
+      <% } %>
+      <% comments.forEach(function (c) { %>
+        <%- include('social-comment-item', { c: c, depth: 0, pcBack: pcBack, profileUser: profileUser, RX_EMOJI: RX_EMOJI, REACTION_TYPES: REACTION_TYPES }) %>
+      <% }) %>
+    </div>
+  </div>
+</div>

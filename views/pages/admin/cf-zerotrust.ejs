@@ -1,0 +1,98 @@
+<%- include('../../partials/head', { title: title }) %>
+
+<%- include('../../partials/cf-head', { base: 'zerotrust', tab, error, query, showZoneSwitcher: false }) %>
+
+<% if (tab === 'management') { %>
+<div class="row">
+  <div class="col-4 col-md-4 col-sm-12"><div class="card stat-card"><div class="stat-icon accent1"><svg class="ic"><use href="#i-shield"/></svg></div><div class="stat-meta"><b><%= apps.length %></b><span>Access Apps</span></div></div></div>
+  <div class="col-4 col-md-4 col-sm-12"><div class="card stat-card"><div class="stat-icon accent2"><svg class="ic"><use href="#i-users"/></svg></div><div class="stat-meta"><b><%= users.length %></b><span>ZT Users</span></div></div></div>
+  <div class="col-4 col-md-4 col-sm-12"><div class="card stat-card"><div class="stat-icon accent3"><svg class="ic"><use href="#i-link"/></svg></div><div class="stat-meta"><b><%= devices.length %></b><span>Devices</span></div></div></div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2><svg class="ic"><use href="#i-shield"/></svg> Access Applications</h2></div>
+  <div class="card-body">
+    <% if (!apps.length) { %><p class="hint center">No Access apps found.</p><% } else { %>
+    <div class="table-card">
+      <table>
+        <thead><tr><th>Name</th><th>Domain</th><th>Type</th><th>Created</th><th></th></tr></thead>
+        <tbody>
+          <% apps.forEach(function (a) { %>
+          <tr>
+            <td><%= a.name %></td>
+            <td class="mono"><%= (a.domain || '—') %></td>
+            <td><%= a.type %></td>
+            <td><%= (a.created_at || '').slice(0, 10) %></td>
+            <td class="ta-r">
+              <form method="POST" action="/admin/cloudflare/zerotrust/app/<%= a.id %>/delete" class="inline" data-confirm="Delete this Access app?">
+                <button class="icon-btn danger" title="Delete"><svg class="ic"><use href="#i-trash"/></svg></button>
+              </form>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-6 col-md-12">
+    <div class="card">
+      <div class="card-head"><h2><svg class="ic"><use href="#i-users"/></svg> Users</h2></div>
+      <div class="card-body">
+        <% if (!users.length) { %><p class="hint center">No Zero Trust users.</p><% } else { %>
+        <div class="table-card">
+          <table>
+            <thead><tr><th>Email</th><th>Name</th><th>Status</th></tr></thead>
+            <tbody>
+              <% users.slice(0, 15).forEach(function (u) { %>
+              <tr><td><%= u.email %></td><td><%= u.name || '—' %></td><td><span class="badge"><%= u.state || '—' %></span></td></tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-12">
+    <div class="card">
+      <div class="card-head"><h2><svg class="ic"><use href="#i-link"/></svg> Devices</h2></div>
+      <div class="card-body">
+        <% if (!devices.length) { %><p class="hint center">No managed devices.</p><% } else { %>
+        <div class="table-card">
+          <table>
+            <thead><tr><th>Name</th><th>Type</th><th>Status</th></tr></thead>
+            <tbody>
+              <% devices.slice(0, 15).forEach(function (d) { %>
+              <tr><td><%= d.name || d.id %></td><td><%= d.type || '—' %></td><td><%= d.status || '—' %></td></tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<% } else { %>
+<div class="row">
+  <div class="col-4 col-md-4 col-sm-12"><div class="card stat-card"><div class="stat-icon accent1"><svg class="ic"><use href="#i-shield"/></svg></div><div class="stat-meta"><b><%= summary && summary.apps != null ? summary.apps : '—' %></b><span>Access Apps<%= summary && summary.appsError ? ' ⚠' : '' %></span></div></div></div>
+  <div class="col-4 col-md-4 col-sm-12"><div class="card stat-card"><div class="stat-icon accent2"><svg class="ic"><use href="#i-users"/></svg></div><div class="stat-meta"><b><%= summary && summary.users != null ? summary.users : '—' %></b><span>ZT Users<%= summary && summary.usersError ? ' ⚠' : '' %></span></div></div></div>
+  <div class="col-4 col-md-4 col-sm-12"><div class="card stat-card"><div class="stat-icon accent3"><svg class="ic"><use href="#i-link"/></svg></div><div class="stat-meta"><b><%= summary && summary.devices != null ? summary.devices : '—' %></b><span>Devices<%= summary && summary.devicesError ? ' ⚠' : '' %></span></div></div></div>
+</div>
+<div class="card">
+  <div class="card-head"><h2><svg class="ic"><use href="#i-chart"/></svg> Zero Trust Overview</h2></div>
+  <div class="card-body">
+    <p class="hint">Live counts from your Cloudflare Zero Trust organization. Detailed usage analytics are available in the Cloudflare dashboard → Zero Trust → Analytics.</p>
+    <% if (summary) { %>
+    <p>Team domain: <b class="mono"><%= typeof cfg !== 'undefined' ? '' : '' %>cloudflareaccess.com</b></p>
+    <% } %>
+  </div>
+</div>
+<% } %>
+
+<%- include('../../partials/footer') %>

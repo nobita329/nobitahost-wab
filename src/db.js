@@ -239,6 +239,65 @@ CREATE TABLE IF NOT EXISTS page_views (
 CREATE INDEX IF NOT EXISTS idx_page_views_page ON page_views(page);
 CREATE INDEX IF NOT EXISTS idx_page_views_created ON page_views(created_at);
 CREATE INDEX IF NOT EXISTS idx_page_views_ip ON page_views(ip);
+
+CREATE TABLE IF NOT EXISTS user_cf_tokens (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  label TEXT DEFAULT '',
+  token TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_user_cf_tokens_user ON user_cf_tokens(user_id);
+
+CREATE TABLE IF NOT EXISTS profile_comments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  profile_user_id INTEGER NOT NULL,
+  author_id INTEGER NOT NULL,
+  parent_id INTEGER DEFAULT NULL,
+  content TEXT NOT NULL,
+  is_edited INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_profile_comments_profile ON profile_comments(profile_user_id);
+CREATE INDEX IF NOT EXISTS idx_profile_comments_parent ON profile_comments(parent_id);
+
+CREATE TABLE IF NOT EXISTS comment_reactions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  comment_id INTEGER NOT NULL,
+  user_id INTEGER NOT NULL,
+  type TEXT NOT NULL DEFAULT 'like',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(comment_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS blog_posts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
+  description TEXT DEFAULT '',
+  cover_image_url TEXT DEFAULT '',
+  seo_title TEXT DEFAULT '',
+  seo_description TEXT DEFAULT '',
+  seo_keywords TEXT DEFAULT '',
+  content TEXT NOT NULL DEFAULT '',
+  tags TEXT DEFAULT '',
+  views INTEGER NOT NULL DEFAULT 0,
+  is_published INTEGER NOT NULL DEFAULT 0,
+  published_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_blog_posts_published ON blog_posts(is_published, published_at);
+
+CREATE TABLE IF NOT EXISTS blog_post_feedback (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  post_id INTEGER NOT NULL,
+  is_helpful INTEGER NOT NULL,
+  session_id TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(post_id, session_id)
+);
 `);
 
 const pageCols = db.pragma('table_info(content_pages)').map((c) => c.name);

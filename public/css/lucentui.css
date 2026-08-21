@@ -1,0 +1,343 @@
+/* ============================================================
+   LucentUI skin for NobitaHost
+   Ported from LucentUI – Minimalist Theme for Paymenter (by Zaqua)
+   Glassy UI · Figtree · Dark/Light · Gradient accents
+   Loaded AFTER style.css — safe to remove to revert.
+   ============================================================ */
+
+:root {
+  --lu-secondary: hsl(217, 100%, 69%);
+  --lu-radius: 18px;
+}
+
+/* ---------- Tokens · Dark (default) ---------- */
+html[data-theme="dark"],
+html[data-theme="rainbow"], html[data-theme="neon"], html[data-theme="sunset"],
+html[data-theme="ocean"], html[data-theme="nature"], html[data-theme="candy"],
+html[data-theme="fire"], html[data-theme="galaxy"], html[data-theme="luxury"],
+html[data-theme="pastel"] {
+  --panel: hsla(220, 14%, 5%, .78);
+  --panel-strong: hsla(220, 12%, 7%, .9);
+  --border: hsla(220, 25%, 55%, .22);
+  --muted: hsl(220, 15%, 66%);
+}
+html[data-theme="dark"] {
+  --bg: hsl(0, 0%, 0%);
+}
+html[data-theme="dark"] .bg-gradient {
+  background: radial-gradient(1200px 800px at 20% -10%, hsla(222, 100%, 50%, .10), transparent 55%),
+              radial-gradient(1000px 700px at 90% 10%, hsla(217, 100%, 69%, .06), transparent 55%),
+              linear-gradient(160deg, #000000, #010208 60%, #000000);
+}
+
+/* ---------- Tokens · Light ---------- */
+html[data-theme="light"] {
+  --bg: hsl(0, 0%, 100%);
+  --panel: hsla(220, 25%, 96%, .78);
+  --panel-strong: hsla(220, 25%, 98%, .92);
+  --border: hsla(220, 25%, 60%, .22);
+  --text: hsl(0, 0%, 8%);
+  --muted: hsl(220, 20%, 38%);
+  --overlay-rgb: 244, 246, 251;
+}
+html[data-theme="light"] .bg-gradient {
+  background: radial-gradient(1200px 800px at 20% -10%, hsla(222, 100%, 50%, .08), transparent 60%),
+              radial-gradient(1000px 700px at 90% 10%, hsla(217, 100%, 69%, .07), transparent 60%),
+              linear-gradient(160deg, hsl(220, 30%, 98%), hsl(0, 0%, 97%) 60%, hsl(220, 25%, 95%));
+}
+html[data-theme="light"] .field input, html[data-theme="light"] .field select,
+html[data-theme="light"] .field textarea, html[data-theme="light"] .wp-toolbar select,
+html[data-theme="light"] .wp-toolbar input, html[data-theme="light"] .search-form input {
+  background: hsl(0, 0%, 100%);
+  color: var(--text);
+}
+html[data-theme="light"] .user-dropdown, html[data-theme="light"] .modal-card,
+html[data-theme="light"] .auth-card { background: hsla(0, 0%, 100%, .88); }
+html[data-theme="light"] .cmd, html[data-theme="light"] .secret,
+html[data-theme="light"] .terminal { background: hsl(220, 25%, 96%); }
+html[data-theme="light"] .term-body { color: hsl(220, 25%, 20%); }
+html[data-theme="light"] .t-out { color: hsl(220, 20%, 35%); }
+html[data-theme="light"] .metric, html[data-theme="light"] .gh-stat,
+html[data-theme="light"] .repo-card, html[data-theme="light"] .github-card,
+html[data-theme="light"] .link-card, html[data-theme="light"] .monitor-mini { background: hsla(220, 25%, 96%, .8); }
+html[data-theme="light"] .yt-video, html[data-theme="light"] .cmd-item { background: hsla(220, 25%, 97%, .85); }
+html[data-theme="light"] .badge { color: hsl(220, 25%, 30%); }
+html[data-theme="light"] .toast { background: hsla(0, 0%, 100%, .92); }
+html[data-theme="light"] .music-tip { background: hsl(0, 0%, 100%); }
+html[data-theme="light"] .cal-cell { color: hsl(220, 25%, 30%); }
+html[data-theme="light"] .t-thumb, html[data-theme="light"] .yt-thumb,
+html[data-theme="light"] .project-thumb, html[data-theme="light"] .preview-stage { background: hsl(220, 25%, 93%); }
+
+/* ---------- Base ---------- */
+body {
+  font-family: 'Figtree', 'Inter', system-ui, -apple-system, sans-serif;
+  letter-spacing: .1px;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, h4, b { letter-spacing: .2px; }
+
+@keyframes luFadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes luGradientText {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+@keyframes luFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+/* ---------- Sidebar · glass rail (respects Transparency & Blur settings) ---------- */
+.sidebar {
+  background: var(--panel-strong);
+  border-right: 1px solid var(--border);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  transition: background .3s ease, backdrop-filter .3s ease;
+}
+body.bar-transparent .sidebar { background: hsla(220, 14%, 3%, .55); }
+body.bar-blur .sidebar {
+  backdrop-filter: blur(var(--glass)) saturate(1.4);
+  -webkit-backdrop-filter: blur(var(--glass)) saturate(1.4);
+}
+html[data-theme="light"] body.bar-transparent .sidebar { background: hsla(220, 25%, 96%, .6); }
+.brand { padding-bottom: 22px; }
+.brand-text b { font-size: 17px; font-weight: 800; }
+.nav-sec { color: var(--muted); opacity: .85; }
+.nav-item {
+  border-radius: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  transition: background .2s cubic-bezier(.4,0,.2,1), color .2s, transform .2s;
+}
+.nav-item:hover { background: hsla(220, 25%, 55%, .12); color: var(--text); transform: translateX(2px); }
+.nav-item.active {
+  background: linear-gradient(90deg, var(--accent), var(--lu-secondary));
+  color: #fff;
+  box-shadow: 0 10px 24px -10px var(--accent);
+}
+.nav-item.active .ic { color: #fff; }
+
+/* ---------- Topbar · floating glass pill (respects Transparency & Blur settings) ---------- */
+.topbar {
+  position: sticky;
+  top: 14px;
+  z-index: 40;
+  height: 62px;
+  margin: 14px 18px 0;
+  padding: 0 18px;
+  width: calc(100% - 36px);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--panel-strong);
+  box-shadow: 0 14px 34px -18px rgba(0, 0, 0, .5);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  transition: box-shadow .3s ease, background .3s ease, backdrop-filter .3s ease;
+}
+body.bar-transparent .topbar { background: var(--panel); }
+body.bar-blur .topbar {
+  backdrop-filter: blur(var(--glass)) saturate(1.5);
+  -webkit-backdrop-filter: blur(var(--glass)) saturate(1.5);
+}
+.page-title { font-weight: 800; }
+.user-chip { border-radius: 12px; transition: all .2s cubic-bezier(.4,0,.2,1); }
+.user-chip:hover { transform: translateY(-1px); border-color: hsla(222, 100%, 50%, .4); }
+.icon-btn { border-radius: 11px; transition: all .2s cubic-bezier(.4,0,.2,1); }
+.icon-btn:hover { transform: translateY(-1px); }
+.user-dropdown {
+  border-radius: 16px;
+  background: var(--panel-strong);
+  backdrop-filter: blur(var(--glass));
+  -webkit-backdrop-filter: blur(var(--glass));
+  overflow: hidden;
+}
+.user-dropdown a { border-radius: 10px; transition: all .18s ease; }
+.user-dropdown a:hover { transform: translateX(3px); color: var(--accent); }
+
+/* ---------- Cards · glassy rounded-2xl ---------- */
+.card, .modal-card, .auth-card, .hero-card {
+  border-radius: var(--lu-radius);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(var(--glass));
+  -webkit-backdrop-filter: blur(var(--glass));
+}
+.card {
+  background: var(--panel);
+  box-shadow: 0 18px 44px -26px rgba(0, 0, 0, .55);
+  animation: luFadeUp .5s cubic-bezier(.2, .8, .2, 1) both;
+  transition: transform .25s cubic-bezier(.4, 0, .2, 1), box-shadow .25s ease, border-color .25s ease;
+}
+.card:hover {
+  transform: translateY(-2px);
+  border-color: hsla(222, 100%, 50%, .28);
+  box-shadow: 0 24px 54px -28px hsla(222, 100%, 50%, .35);
+}
+.card-head { border-bottom: 1px solid var(--border); }
+.card-head h2 .ic { color: var(--accent); }
+.card-foot a { color: var(--accent); }
+
+/* Stat icons · soft gradient chips */
+.stat-icon { border-radius: 14px; transition: transform .3s cubic-bezier(.34, 1.56, .64, 1); }
+.stat-card:hover .stat-icon { transform: scale(1.1) rotate(6deg); }
+.accent1 { background: hsla(222, 100%, 50%, .14); color: hsl(217, 100%, 69%); }
+
+/* ---------- Hero · animated gradient title ---------- */
+.hero-card {
+  background: linear-gradient(120deg, hsla(222, 100%, 50%, .12), hsla(217, 100%, 69%, .08) 55%, var(--panel));
+  animation: luFadeUp .6s cubic-bezier(.2, .8, .2, 1) both;
+}
+.hero-card::before {
+  background: radial-gradient(circle, hsla(222, 100%, 50%, .3), transparent 65%);
+  animation: luFloat 6s ease-in-out infinite;
+}
+.grad-text {
+  background: linear-gradient(90deg, var(--accent), var(--lu-secondary), var(--accent));
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: luGradientText 4s ease-in-out infinite;
+}
+.clock-time, .weather-temp, .err-code, .gh-stat b {
+  background: linear-gradient(90deg, var(--accent), var(--lu-secondary));
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* ---------- Buttons · gradient + lift ---------- */
+.btn { border-radius: 12px; font-weight: 700; transition: all .25s cubic-bezier(.4, 0, .2, 1); }
+.btn:hover { transform: translateY(-1px); }
+.btn-accent {
+  background: linear-gradient(135deg, var(--accent), var(--lu-secondary));
+  border: none;
+  color: #fff;
+  box-shadow: 0 12px 28px -12px var(--accent);
+}
+.btn-accent:hover { transform: translateY(-2px) scale(1.02); box-shadow: 0 16px 34px -12px var(--accent); filter: none; }
+.btn-accent:active { transform: none; transition-duration: .1s; }
+.btn-danger { background: linear-gradient(135deg, hsl(0, 75%, 60%), hsl(0, 70%, 45%)); border: none; }
+.btn-demo { background: linear-gradient(90deg, hsl(142, 71%, 45%), hsl(210, 100%, 60%)); }
+
+/* ---------- Forms ---------- */
+.field input, .field select, .field textarea, .search-form input,
+.wp-toolbar select, .wp-toolbar input, .term-actions input {
+  border-radius: 12px;
+  transition: border-color .2s, box-shadow .2s, background .2s;
+}
+.field input:focus, .field select:focus, .field textarea:focus,
+.search-form input:focus, .wp-toolbar select:focus, .wp-toolbar input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px hsla(222, 100%, 50%, .14);
+}
+.switch input:checked + span { background: linear-gradient(90deg, var(--accent), var(--lu-secondary)); }
+.seg button.active { background: linear-gradient(135deg, var(--accent), var(--lu-secondary)); }
+.cal-cell.today {
+  background: linear-gradient(135deg, var(--accent), var(--lu-secondary));
+  box-shadow: 0 8px 18px -8px var(--accent);
+}
+
+/* ---------- Badges & alerts · state colors ---------- */
+.badge.green { background: hsla(142, 71%, 45%, .14); color: hsl(142, 71%, 55%); border-color: hsla(142, 71%, 45%, .3); }
+.badge.red { background: hsla(0, 75%, 60%, .14); color: hsl(0, 85%, 70%); border-color: hsla(0, 75%, 60%, .3); }
+.badge.gold, .badge-gold { background: hsla(25, 95%, 53%, .14); color: hsl(25, 95%, 60%); border-color: hsla(25, 95%, 53%, .3); }
+.badge-accent { background: hsla(222, 100%, 50%, .14); color: hsl(217, 100%, 74%); border-color: hsla(222, 100%, 50%, .32); }
+.alert-error { background: hsla(0, 75%, 60%, .1); border-color: hsla(0, 75%, 60%, .35); color: hsl(0, 90%, 78%); }
+.alert-success { background: hsla(142, 71%, 45%, .1); border-color: hsla(142, 71%, 45%, .35); color: hsl(142, 70%, 70%); }
+.alert-info { background: hsla(210, 100%, 60%, .1); border-color: hsla(210, 100%, 60%, .35); color: hsl(210, 100%, 76%); }
+
+/* ---------- Tables / lists ---------- */
+thead th { color: var(--muted); }
+tbody tr:hover { background: hsla(220, 25%, 55%, .07); }
+.list-action:hover { color: var(--accent); }
+.link-card:hover, .github-card:hover, .repo-card:hover, .yt-video:hover {
+  border-color: var(--accent);
+  box-shadow: 0 16px 34px -16px hsla(222, 100%, 50%, .4);
+}
+
+/* ---------- Modals / toasts ---------- */
+.modal-card {
+  background: var(--panel-strong);
+  box-shadow: 0 34px 90px rgba(0, 0, 0, .55);
+  animation: luFadeUp .22s ease both;
+}
+.toast {
+  background: var(--panel-strong);
+  backdrop-filter: blur(var(--glass));
+  -webkit-backdrop-filter: blur(var(--glass));
+  border-radius: 14px;
+  animation: luFadeUp .25s ease both;
+}
+
+/* ---------- Auth pages ---------- */
+.auth-card {
+  background: var(--panel);
+  border-radius: 22px;
+  padding: 36px;
+  box-shadow: 0 34px 90px -30px rgba(0, 0, 0, .6);
+  animation: luFadeUp .6s cubic-bezier(.2, .8, .2, 1) both;
+}
+.auth-brand h1 {
+  background: linear-gradient(90deg, var(--accent), var(--lu-secondary), var(--accent));
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: luGradientText 4s ease-in-out infinite;
+}
+
+/* ---------- Music widget ---------- */
+.music-widget .icon-btn {
+  background: linear-gradient(135deg, var(--accent), var(--lu-secondary));
+  box-shadow: 0 16px 36px -12px var(--accent);
+}
+
+/* ---------- Footer · glass bar ---------- */
+.lucent-footer {
+  margin: 8px 18px 18px;
+  padding: 18px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--lu-radius);
+  background: var(--panel);
+  backdrop-filter: blur(var(--glass));
+  -webkit-backdrop-filter: blur(var(--glass));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--muted);
+  animation: luFadeUp .6s cubic-bezier(.2, .8, .2, 1) both;
+}
+.lucent-footer b { color: var(--text); }
+.lucent-footer .lf-links { display: flex; gap: 16px; }
+.lucent-footer a { color: var(--muted); font-weight: 600; transition: color .2s; }
+.lucent-footer a:hover { color: var(--accent); }
+@media (max-width: 640px) { .lucent-footer { margin: 8px 14px 14px; } }
+
+/* ---------- Theme toggle ---------- */
+#themeToggle .ic { transition: transform .4s cubic-bezier(.34, 1.56, .64, 1); }
+#themeToggle:hover .ic { transform: rotate(40deg) scale(1.1); color: var(--accent); }
+
+/* ---------- Scrollbar · LucentUI style ---------- */
+::-webkit-scrollbar { background: transparent; width: 12px; height: 12px; }
+::-webkit-scrollbar-track, ::-webkit-scrollbar-track-piece { background: transparent; }
+::-webkit-scrollbar-thumb {
+  border: solid 4px transparent;
+  border-radius: 10px;
+  background-clip: padding-box;
+  background-color: hsla(222, 100%, 50%, .45);
+}
+::-webkit-scrollbar-thumb:hover { background-color: hsla(222, 100%, 50%, .7); }
+.sidebar-inner::-webkit-scrollbar-thumb { background-color: hsla(222, 100%, 50%, .35); }
+
+/* ---------- Motion safety ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}

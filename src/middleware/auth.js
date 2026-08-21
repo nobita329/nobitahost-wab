@@ -63,6 +63,15 @@ function loadUser(req, res, next) {
   } catch (e) {
     res.locals.navPages = [];
   }
+  try {
+    const obsidian = require('../obsidian');
+    const navData = obsidian.parseNavbar(obsidian.load('navbar'));
+    res.locals.customNavLinks = navData.enabled ? obsidian.visibleFor(navData.links, req.user) : [];
+    res.locals.footerData = obsidian.parseFooter(obsidian.load('footer'));
+  } catch (e) {
+    res.locals.customNavLinks = [];
+    res.locals.footerData = null;
+  }
   next();
 }
 

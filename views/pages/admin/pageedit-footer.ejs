@@ -1,0 +1,47 @@
+<%- include('../../partials/head', { title: title }) %>
+
+<% if (query.saved) { %><div class="alert alert-success">Footer saved.</div><% } %>
+
+<form method="POST" action="/admin/pages/footer">
+  <div class="pe-grid">
+    <div class="pe-main">
+      <div class="card">
+        <div class="card-head"><h2><svg class="ic"><use href="#i-link"/></svg> Link Columns</h2></div>
+        <div class="card-body">
+          <div class="field"><label>Columns</label>
+            <textarea name="columns_text" rows="12" class="mono" placeholder="# Product&#10;Plans | /plans | internal | always&#10;Blog | /blog | internal | always&#10;&#10;# Community&#10;Discord | https://discord.gg/xyz | external | always"><%= d.columns_text %></textarea>
+          </div>
+          <p class="hint">Start each column with <code># Column Title</code>, then one link per line: <code>Label | URL | internal/external | always/guest/auth</code>. Visibility controls who sees the link — everyone, only logged-out guests, or only logged-in users.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2><svg class="ic"><use href="#i-shield"/></svg> Legal Links</h2></div>
+        <div class="card-body">
+          <div class="field"><label>Legal Links <small>(one per line)</small></label>
+            <textarea name="legal_text" rows="4" class="mono"><%= d.legal_text %></textarea>
+          </div>
+          <p class="hint">Same format as column links. These appear in the bottom bar next to the copyright.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="pe-side">
+      <div class="card">
+        <div class="card-head"><h2><svg class="ic"><use href="#i-shield"/></svg> Publish</h2></div>
+        <div class="card-body">
+          <div class="switch-row"><div><b>Use custom footer</b><small>Shows link columns above the bottom bar</small></div>
+            <label class="switch"><input type="checkbox" name="enabled" <%= d.enabled ? 'checked' : '' %>><span></span></label>
+          </div>
+          <div class="field"><label>Copyright Text</label>
+            <input type="text" name="copyright" value="<%= d.copyright %>" placeholder="© <%= new Date().getFullYear() %> <%= settings.panel_name %>. All rights reserved.">
+          </div>
+          <button class="btn btn-accent btn-block" type="submit"><svg class="ic"><use href="#i-shield"/></svg> Save Footer</button>
+          <a class="btn btn-ghost btn-block" href="/admin/pages">← Page Editors</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+
+<%- include('../../partials/footer') %>

@@ -1,0 +1,70 @@
+<%- include('../../partials/head', { title: title }) %>
+
+<% if (query.error === 'fields') { %><div class="alert alert-error">Title and content are required.</div><% } %>
+
+<form method="POST" action="<%= post ? '/admin/blog/' + post.id + '/edit' : '/admin/blog/create' %>">
+  <div class="blog-form-grid">
+    <div class="blog-form-main">
+      <div class="card">
+        <div class="card-head"><h2><svg class="ic"><use href="#i-pencil"/></svg> <%= post ? 'Edit Post' : 'New Post' %></h2></div>
+        <div class="card-body">
+          <div class="field"><label>Title</label>
+            <input type="text" name="title" value="<%= post ? post.title : '' %>" required placeholder="My awesome blog post">
+          </div>
+          <div class="field"><label>Short Description</label>
+            <textarea name="description" rows="2" maxlength="255" placeholder="Shown on cards and search results"><%= post ? post.description : '' %></textarea>
+          </div>
+          <div class="field"><label>Content <small>(Markdown supported)</small></label>
+            <textarea name="content" rows="18" class="mono" required placeholder="# Heading&#10;&#10;Write your article in **Markdown**…"><%= post ? post.content : '' %></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2><svg class="ic"><use href="#i-search"/></svg> SEO</h2></div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-6 col-sm-12">
+              <div class="field"><label>SEO Title</label>
+                <input type="text" name="seo_title" value="<%= post ? post.seo_title : '' %>" placeholder="Custom browser / search title">
+              </div>
+            </div>
+            <div class="col-6 col-sm-12">
+              <div class="field"><label>Keywords</label>
+                <input type="text" name="seo_keywords" value="<%= post ? post.seo_keywords : '' %>" placeholder="hosting, minecraft, guide">
+              </div>
+            </div>
+          </div>
+          <div class="field"><label>Meta Description</label>
+            <textarea name="seo_description" rows="2" maxlength="320" placeholder="Up to 320 characters for search engines"><%= post ? post.seo_description : '' %></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="blog-form-side">
+      <div class="card">
+        <div class="card-head"><h2><svg class="ic"><use href="#i-file"/></svg> Publish</h2></div>
+        <div class="card-body">
+          <div class="switch-row"><div><b>Published</b><small><%= post && post.published_at ? 'On ' + post.published_at.slice(0, 16) : 'Will be dated now' %></small></div>
+            <label class="switch"><input type="checkbox" name="is_published" <%= post && post.is_published ? 'checked' : '' %>><span></span></label>
+          </div>
+          <div class="field"><label>URL Slug</label>
+            <input type="text" name="slug" value="<%= post ? post.slug : '' %>" placeholder="auto-generated-from-title">
+          </div>
+          <div class="field"><label>Tags <small>(comma separated)</small></label>
+            <input type="text" name="tags" value="<%= post ? post.tags : '' %>" placeholder="news, updates, guide">
+          </div>
+          <div class="field"><label>Cover Image URL</label>
+            <input type="text" name="cover_image_url" value="<%= post ? post.cover_image_url : '' %>" placeholder="https://… or /uploads/…">
+          </div>
+          <button class="btn btn-accent btn-block" type="submit"><svg class="ic"><use href="#i-shield"/></svg> <%= post ? 'Save Changes' : 'Create Post' %></button>
+          <% if (post) { %><a class="btn btn-block" href="/blog/<%= post.slug %>">View on site</a><% } %>
+          <a class="btn btn-ghost btn-block" href="/admin/blog">Back to list</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+
+<%- include('../../partials/footer') %>
