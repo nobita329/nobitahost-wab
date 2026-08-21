@@ -97,4 +97,3 @@ public/              css, js, uploads
 ```
 
 > Default admin: `admin` / `admin123` — change it after first login!
-test change
