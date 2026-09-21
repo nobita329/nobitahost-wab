@@ -1,0 +1,724 @@
+/* ============================================================================
+   CasaOS UI for NobitaHost (PHP edition)
+   ----------------------------------------------------------------------------
+   Loaded after base.css + lucentui.css. Remaps the panel tokens to the CasaOS
+   look (soft glass cards, Figtree, pill topbar, icon dock, app grid, storage
+   widgets) and adds the `.cs-*` desktop shell components.
+   Toggle with <html data-ui="casaos"> (default) or data-ui="classic".
+   ============================================================================ */
+
+:root {
+  --cs-accent: #3388ff;
+  --cs-accent-2: #59a5ff;
+  --cs-green: #34c759;
+  --cs-orange: #ff9f0a;
+  --cs-red: #ff453a;
+  --cs-purple: #a55eea;
+  --cs-radius-lg: 20px;
+  --cs-radius: 14px;
+  --cs-radius-sm: 10px;
+  --cs-topbar-h: 58px;
+  --cs-dock-w: 68px;
+  --cs-gap: 18px;
+  --cs-blur: 28px;
+  --cs-font: 'Figtree', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+/* ---------------- Light (CasaOS default) ---------------- */
+html[data-theme="light"] {
+  --cs-card: rgba(255, 255, 255, .72);
+  --cs-card-strong: rgba(255, 255, 255, .9);
+  --cs-card-solid: #ffffff;
+  --cs-border: rgba(17, 24, 39, .07);
+  --cs-text: #1d1d1f;
+  --cs-text-2: #4b5563;
+  --cs-muted: #7b8494;
+  --cs-chip: rgba(255, 255, 255, .55);
+  --cs-shadow: 0 8px 28px rgba(16, 24, 40, .1);
+  --cs-shadow-sm: 0 2px 10px rgba(16, 24, 40, .07);
+  --cs-hover: rgba(17, 24, 39, .05);
+  --cs-input: rgba(255, 255, 255, .92);
+  --cs-scrim: rgba(15, 20, 30, .45);
+}
+
+/* ---------------- Dark ---------------- */
+html[data-theme="dark"],
+html[data-theme="rainbow"], html[data-theme="neon"], html[data-theme="sunset"],
+html[data-theme="ocean"], html[data-theme="nature"], html[data-theme="candy"],
+html[data-theme="fire"], html[data-theme="galaxy"], html[data-theme="luxury"],
+html[data-theme="pastel"] {
+  --cs-card: rgba(24, 26, 31, .66);
+  --cs-card-strong: rgba(24, 26, 31, .86);
+  --cs-card-solid: #1c1e23;
+  --cs-border: rgba(255, 255, 255, .09);
+  --cs-text: #f2f3f5;
+  --cs-text-2: #c7ccd6;
+  --cs-muted: #98a1b3;
+  --cs-chip: rgba(255, 255, 255, .06);
+  --cs-shadow: 0 10px 30px rgba(0, 0, 0, .45);
+  --cs-shadow-sm: 0 2px 12px rgba(0, 0, 0, .3);
+  --cs-hover: rgba(255, 255, 255, .06);
+  --cs-input: rgba(255, 255, 255, .05);
+  --cs-scrim: rgba(0, 0, 0, .6);
+}
+
+/* ============================================================================
+   Token remap — makes every legacy panel component look like CasaOS
+   ============================================================================ */
+html[data-ui="casaos"] {
+  --panel: var(--cs-card);
+  --panel-strong: var(--cs-card-strong);
+  --border: var(--cs-border);
+  --text: var(--cs-text);
+  --muted: var(--cs-muted);
+  --accent: var(--cs-accent);
+  --radius: var(--cs-radius);
+  --card-radius: var(--cs-radius-lg);
+  --font: var(--cs-font);
+  --glass: var(--cs-blur);
+}
+
+html[data-ui="casaos"] body {
+  font-family: var(--cs-font);
+  letter-spacing: .1px;
+  font-size: 14.5px;
+}
+
+html[data-ui="casaos"] .bg-overlay { background: rgba(var(--overlay-rgb), calc(var(--overlay, .42) * .8)); }
+html[data-ui="casaos"] .bg-img { animation: none; }
+
+/* --- cards --- */
+html[data-ui="casaos"] .card,
+html[data-ui="casaos"] .hero-card,
+html[data-ui="casaos"] .auth-card,
+html[data-ui="casaos"] .modal-card,
+html[data-ui="casaos"] .stat-card,
+html[data-ui="casaos"] .combo-card,
+html[data-ui="casaos"] .panel {
+  background: var(--cs-card);
+  backdrop-filter: blur(var(--cs-blur)) saturate(1.5);
+  -webkit-backdrop-filter: blur(var(--cs-blur)) saturate(1.5);
+  border: 1px solid var(--cs-border);
+  border-radius: var(--cs-radius-lg);
+  box-shadow: var(--cs-shadow-sm);
+  transition: box-shadow .22s ease, transform .22s ease, background .22s ease;
+}
+html[data-ui="casaos"] .card:hover,
+html[data-ui="casaos"] .stat-card:hover { box-shadow: var(--cs-shadow); }
+
+/* --- buttons: CasaOS pills --- */
+html[data-ui="casaos"] .btn,
+html[data-ui="casaos"] button.btn,
+html[data-ui="casaos"] .icon-btn {
+  border-radius: var(--cs-radius-sm);
+  font-weight: 600;
+  font-family: var(--cs-font);
+  letter-spacing: .1px;
+  border: 1px solid transparent;
+  transition: transform .15s ease, box-shadow .2s ease, background .2s ease, opacity .2s;
+}
+html[data-ui="casaos"] .btn:active { transform: scale(.97); }
+html[data-ui="casaos"] .btn-primary {
+  background: var(--cs-accent);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--cs-accent) 40%, transparent);
+}
+html[data-ui="casaos"] .btn-primary:hover { background: var(--cs-accent-2); }
+html[data-ui="casaos"] .btn-ghost { background: var(--cs-chip); border-color: var(--cs-border); }
+html[data-ui="casaos"] .btn-ghost:hover { background: var(--cs-hover); }
+html[data-ui="casaos"] .icon-btn { background: var(--cs-chip); border-color: var(--cs-border); }
+html[data-ui="casaos"] .icon-btn:hover { background: var(--cs-hover); }
+
+/* --- inputs --- */
+html[data-ui="casaos"] .field input,
+html[data-ui="casaos"] .field select,
+html[data-ui="casaos"] .field textarea,
+html[data-ui="casaos"] input[type="text"],
+html[data-ui="casaos"] input[type="password"],
+html[data-ui="casaos"] input[type="email"],
+html[data-ui="casaos"] input[type="number"],
+html[data-ui="casaos"] input[type="url"],
+html[data-ui="casaos"] input[type="search"],
+html[data-ui="casaos"] select,
+html[data-ui="casaos"] textarea {
+  background: var(--cs-input);
+  border: 1px solid var(--cs-border);
+  border-radius: var(--cs-radius-sm);
+  color: var(--cs-text);
+  font-family: var(--cs-font);
+  transition: border-color .18s ease, box-shadow .18s ease;
+}
+html[data-ui="casaos"] .field input:focus,
+html[data-ui="casaos"] .field select:focus,
+html[data-ui="casaos"] .field textarea:focus,
+html[data-ui="casaos"] input:focus,
+html[data-ui="casaos"] select:focus,
+html[data-ui="casaos"] textarea:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--cs-accent) 65%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--cs-accent) 18%, transparent);
+}
+html[data-ui="casaos"] .field label { color: var(--cs-text-2); font-weight: 600; font-size: 13px; }
+
+/* --- tables --- */
+html[data-ui="casaos"] table { border-collapse: separate; border-spacing: 0; }
+html[data-ui="casaos"] thead th {
+  background: var(--cs-chip);
+  color: var(--cs-muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  font-weight: 700;
+  border-bottom: 1px solid var(--cs-border);
+}
+html[data-ui="casaos"] tbody td { border-bottom: 1px solid var(--cs-border); }
+html[data-ui="casaos"] tbody tr:hover { background: var(--cs-hover); }
+
+/* --- badges --- */
+html[data-ui="casaos"] .badge {
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: .2px;
+  border: 1px solid var(--cs-border);
+  background: var(--cs-chip);
+}
+
+/* ============================================================================
+   CasaOS desktop shell
+   ============================================================================ */
+
+.cs-shell {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: var(--cs-dock-w) minmax(0, 1fr);
+  grid-template-rows: var(--cs-topbar-h) minmax(0, 1fr);
+  grid-template-areas:
+    "topbar topbar"
+    "dock   main";
+  gap: 0;
+}
+.cs-shell.no-dock { grid-template-columns: 0 minmax(0, 1fr); }
+.cs-shell.no-dock .cs-dock { display: none; }
+
+/* ---------------- topbar ---------------- */
+.cs-topbar {
+  grid-area: topbar;
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  background: var(--cs-card-strong);
+  backdrop-filter: blur(var(--cs-blur)) saturate(1.6);
+  -webkit-backdrop-filter: blur(var(--cs-blur)) saturate(1.6);
+  border-bottom: 1px solid var(--cs-border);
+}
+.cs-topbar .cs-brand {
+  display: flex; align-items: center; gap: 10px;
+  font-weight: 800; font-size: 15px; color: var(--cs-text);
+  letter-spacing: .2px; text-decoration: none;
+}
+.cs-topbar .cs-brand img,
+.cs-topbar .cs-brand .cs-brand-emoji {
+  width: 30px; height: 30px; border-radius: 9px; object-fit: contain;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--cs-accent) 25%, transparent), transparent);
+  border: 1px solid var(--cs-border); font-size: 16px;
+}
+.cs-topbar .cs-crumb {
+  color: var(--cs-muted); font-size: 13px; font-weight: 600;
+  padding-left: 12px; margin-left: 4px; border-left: 1px solid var(--cs-border);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cs-spacer { flex: 1 1 auto; }
+
+/* widgets (CPU / RAM / disk / net) */
+.cs-widgets { display: flex; align-items: center; gap: 8px; }
+.cs-widget {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: var(--cs-chip);
+  border: 1px solid var(--cs-border);
+  color: var(--cs-text-2);
+  font-size: 12.5px; font-weight: 600;
+  white-space: nowrap;
+  transition: background .2s ease, transform .2s ease;
+}
+.cs-widget:hover { background: var(--cs-hover); transform: translateY(-1px); }
+.cs-widget b { color: var(--cs-text); font-weight: 700; font-variant-numeric: tabular-nums; }
+.cs-widget .cs-w-ic { width: 15px; height: 15px; color: var(--cs-accent); }
+.cs-widget .cs-w-ic.green { color: var(--cs-green); }
+.cs-widget .cs-w-ic.orange { color: var(--cs-orange); }
+.cs-widget .cs-w-ic.red { color: var(--cs-red); }
+.cs-meter {
+  position: relative; width: 34px; height: 5px; border-radius: 999px;
+  background: color-mix(in srgb, var(--cs-text) 12%, transparent); overflow: hidden;
+}
+.cs-meter i {
+  position: absolute; inset: 0 auto 0 0; width: 0%;
+  border-radius: 999px; background: var(--cs-accent);
+  transition: width .6s cubic-bezier(.4, 0, .2, 1), background .3s;
+}
+.cs-meter i.warn { background: var(--cs-orange); }
+.cs-meter i.crit { background: var(--cs-red); }
+.cs-clock {
+  display: flex; flex-direction: column; align-items: flex-end; line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.cs-clock b { font-size: 14px; color: var(--cs-text); font-weight: 700; }
+.cs-clock span { font-size: 11px; color: var(--cs-muted); font-weight: 600; }
+
+.cs-avatar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 10px 4px 4px;
+  border-radius: 999px;
+  background: var(--cs-chip);
+  border: 1px solid var(--cs-border);
+  cursor: pointer;
+  transition: background .2s ease;
+}
+.cs-avatar:hover { background: var(--cs-hover); }
+.cs-avatar img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
+.cs-avatar .cs-av-name { font-size: 13px; font-weight: 700; color: var(--cs-text); }
+.cs-avatar .cs-av-role { font-size: 10.5px; color: var(--cs-muted); font-weight: 600; }
+
+/* dropdown menu */
+.cs-menu {
+  position: absolute; top: calc(100% + 8px); right: 12px;
+  min-width: 220px; padding: 6px;
+  background: var(--cs-card-strong);
+  backdrop-filter: blur(var(--cs-blur));
+  border: 1px solid var(--cs-border);
+  border-radius: var(--cs-radius);
+  box-shadow: var(--cs-shadow);
+  z-index: 90;
+  display: none;
+}
+.cs-menu.open { display: block; animation: csPop .16s ease; }
+@keyframes csPop { from { opacity: 0; transform: translateY(-6px) scale(.98); } to { opacity: 1; transform: none; } }
+.cs-menu a, .cs-menu button {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; padding: 9px 10px;
+  border-radius: var(--cs-radius-sm);
+  color: var(--cs-text-2); font-size: 13.5px; font-weight: 600;
+  text-decoration: none; background: none; border: 0; cursor: pointer; text-align: left;
+  font-family: var(--cs-font);
+}
+.cs-menu a:hover, .cs-menu button:hover { background: var(--cs-hover); color: var(--cs-text); }
+.cs-menu hr { border: 0; border-top: 1px solid var(--cs-border); margin: 5px 2px; }
+.cs-menu .cs-menu-head { padding: 8px 10px; display: flex; gap: 10px; align-items: center; }
+.cs-menu .cs-menu-head img { width: 34px; height: 34px; border-radius: 50%; }
+.cs-menu .cs-menu-head b { display: block; font-size: 13.5px; color: var(--cs-text); }
+.cs-menu .cs-menu-head span { font-size: 11.5px; color: var(--cs-muted); }
+
+/* ---------------- dock (left rail) ---------------- */
+.cs-dock {
+  grid-area: dock;
+  position: sticky;
+  top: var(--cs-topbar-h);
+  align-self: start;
+  height: calc(100vh - var(--cs-topbar-h));
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 14px 0 18px;
+  background: var(--cs-card);
+  backdrop-filter: blur(var(--cs-blur)) saturate(1.4);
+  -webkit-backdrop-filter: blur(var(--cs-blur)) saturate(1.4);
+  border-right: 1px solid var(--cs-border);
+  overflow-y: auto; overflow-x: hidden;
+  scrollbar-width: thin;
+  z-index: 50;
+}
+.cs-dock::-webkit-scrollbar { width: 4px; }
+.cs-dock::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--cs-text) 15%, transparent); border-radius: 4px; }
+.cs-dock-item {
+  position: relative;
+  width: 44px; height: 44px; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 13px;
+  color: var(--cs-text-2);
+  text-decoration: none;
+  transition: background .18s ease, color .18s ease, transform .18s ease;
+}
+.cs-dock-item:hover { background: var(--cs-hover); color: var(--cs-text); transform: translateY(-1px); }
+.cs-dock-item.active {
+  background: color-mix(in srgb, var(--cs-accent) 18%, transparent);
+  color: var(--cs-accent);
+}
+.cs-dock-item.active::before {
+  content: ''; position: absolute; left: -12px; top: 50%; transform: translateY(-50%);
+  width: 3px; height: 20px; border-radius: 0 3px 3px 0; background: var(--cs-accent);
+}
+.cs-dock-item .ic { width: 20px; height: 20px; }
+.cs-dock-item .cs-dock-emoji { font-size: 19px; line-height: 1; }
+.cs-dock-sep { width: 26px; height: 1px; background: var(--cs-border); margin: 6px 0; flex: none; }
+.cs-dock-label {
+  font-size: 9.5px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase;
+  color: var(--cs-muted); margin: 6px 0 2px; writing-mode: horizontal-tb; flex: none;
+}
+
+/* dock tooltip */
+.cs-dock-item[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%) translateX(-4px);
+  padding: 5px 10px; border-radius: 8px;
+  background: var(--cs-card-solid); color: var(--cs-text);
+  border: 1px solid var(--cs-border); box-shadow: var(--cs-shadow-sm);
+  font-size: 12px; font-weight: 700; white-space: nowrap;
+  opacity: 0; pointer-events: none; transition: opacity .15s ease, transform .15s ease;
+  z-index: 70;
+}
+.cs-dock-item[data-tip]:hover::after { opacity: 1; transform: translateY(-50%) translateX(0); }
+
+/* ---------------- main ---------------- */
+.cs-main {
+  grid-area: main;
+  min-width: 0;
+  padding: var(--cs-gap);
+  display: flex; flex-direction: column; gap: var(--cs-gap);
+}
+.cs-main > .cs-page-head { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
+.cs-page-title { font-size: 24px; font-weight: 800; color: var(--cs-text); letter-spacing: -.2px; margin: 0; }
+.cs-page-sub { font-size: 13.5px; color: var(--cs-muted); font-weight: 500; margin-top: 2px; }
+.cs-page-actions { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ---------------- app grid (CasaOS home) ---------------- */
+.cs-apps { display: flex; flex-direction: column; gap: 22px; }
+.cs-apps-section { display: flex; flex-direction: column; gap: 12px; }
+.cs-apps-head { display: flex; align-items: center; gap: 10px; }
+.cs-apps-head h2 {
+  margin: 0; font-size: 15px; font-weight: 800; color: var(--cs-text); letter-spacing: .1px;
+}
+.cs-apps-head .cs-count {
+  font-size: 11.5px; font-weight: 700; color: var(--cs-muted);
+  background: var(--cs-chip); border: 1px solid var(--cs-border);
+  padding: 1px 8px; border-radius: 999px;
+}
+.cs-apps-head .cs-apps-tools { margin-left: auto; display: flex; gap: 8px; }
+
+.cs-app-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 14px 10px;
+}
+.cs-app-grid.list { grid-template-columns: 1fr; gap: 8px; }
+
+.cs-app {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 12px 6px 10px;
+  border-radius: var(--cs-radius-lg);
+  text-decoration: none;
+  color: var(--cs-text);
+  background: transparent;
+  border: 1px solid transparent;
+  transition: background .18s ease, transform .18s ease, border-color .18s ease;
+  cursor: pointer;
+}
+.cs-app:hover { background: var(--cs-chip); border-color: var(--cs-border); transform: translateY(-2px); }
+.cs-app:active { transform: scale(.97); }
+.cs-app-icon {
+  width: 52px; height: 52px; border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 25px; line-height: 1;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--cs-tile, var(--cs-accent)) 92%, #fff 8%), color-mix(in srgb, var(--cs-tile, var(--cs-accent)) 72%, #000 12%));
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--cs-tile, var(--cs-accent)) 34%, transparent), inset 0 1px 0 rgba(255,255,255,.28);
+  color: #fff;
+}
+.cs-app-icon .ic { width: 26px; height: 26px; }
+.cs-app-name {
+  font-size: 12.5px; font-weight: 700; color: var(--cs-text);
+  text-align: center; line-height: 1.25;
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.cs-app-sub { font-size: 10.5px; color: var(--cs-muted); font-weight: 600; margin-top: -5px; }
+.cs-app .cs-app-flag {
+  position: absolute; top: 6px; right: 8px;
+  font-size: 9px; font-weight: 800; letter-spacing: .4px; text-transform: uppercase;
+  padding: 2px 6px; border-radius: 999px;
+  background: color-mix(in srgb, var(--cs-accent) 20%, transparent);
+  color: var(--cs-accent); border: 1px solid color-mix(in srgb, var(--cs-accent) 30%, transparent);
+}
+.cs-app.add .cs-app-icon {
+  background: var(--cs-chip);
+  border: 1.5px dashed color-mix(in srgb, var(--cs-text) 22%, transparent);
+  box-shadow: none; color: var(--cs-muted);
+}
+.cs-app-grid.list .cs-app {
+  flex-direction: row; justify-content: flex-start; gap: 12px;
+  padding: 8px 12px; background: var(--cs-card); border-color: var(--cs-border);
+}
+.cs-app-grid.list .cs-app-icon { width: 38px; height: 38px; border-radius: 12px; font-size: 18px; }
+.cs-app-grid.list .cs-app-name { text-align: left; }
+.cs-app-grid.list .cs-app-meta { display: flex; flex-direction: column; min-width: 0; }
+.cs-app-grid.list .cs-app-open { margin-left: auto; }
+
+/* ---------------- stat tiles ---------------- */
+.cs-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
+.cs-stat {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--cs-radius-lg);
+  background: var(--cs-card);
+  backdrop-filter: blur(var(--cs-blur));
+  border: 1px solid var(--cs-border);
+  box-shadow: var(--cs-shadow-sm);
+}
+.cs-stat .cs-stat-ic {
+  width: 40px; height: 40px; border-radius: 13px; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--cs-tile, var(--cs-accent)) 16%, transparent);
+  color: var(--cs-tile, var(--cs-accent));
+}
+.cs-stat .cs-stat-ic .ic { width: 20px; height: 20px; }
+.cs-stat b { display: block; font-size: 19px; font-weight: 800; color: var(--cs-text); line-height: 1.2; }
+.cs-stat span { font-size: 12px; color: var(--cs-muted); font-weight: 600; }
+.cs-stat .cs-stat-bar { margin-top: 6px; height: 4px; border-radius: 999px; background: color-mix(in srgb, var(--cs-text) 10%, transparent); overflow: hidden; }
+.cs-stat .cs-stat-bar i { display: block; height: 100%; width: 0; border-radius: 999px; background: var(--cs-tile, var(--cs-accent)); transition: width .6s ease; }
+
+/* ---------------- storage panel ---------------- */
+.cs-storage { display: flex; flex-direction: column; gap: 12px; }
+.cs-drive {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 16px; border-radius: var(--cs-radius-lg);
+  background: var(--cs-card); border: 1px solid var(--cs-border);
+  backdrop-filter: blur(var(--cs-blur)); box-shadow: var(--cs-shadow-sm);
+}
+.cs-drive-ic {
+  width: 42px; height: 42px; border-radius: 13px; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--cs-accent) 14%, transparent); color: var(--cs-accent);
+}
+.cs-drive-meta { min-width: 0; flex: 1; }
+.cs-drive-meta b { font-size: 13.5px; color: var(--cs-text); display: block; }
+.cs-drive-meta span { font-size: 12px; color: var(--cs-muted); }
+.cs-drive-bar { height: 6px; border-radius: 999px; background: color-mix(in srgb, var(--cs-text) 10%, transparent); overflow: hidden; margin-top: 7px; }
+.cs-drive-bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--cs-accent), var(--cs-accent-2)); border-radius: 999px; transition: width .6s ease; }
+.cs-drive-bar i.warn { background: linear-gradient(90deg, var(--cs-orange), #ffc65c); }
+.cs-drive-bar i.crit { background: linear-gradient(90deg, var(--cs-red), #ff8a80); }
+
+/* ---------------- panel / section card ---------------- */
+.cs-panel {
+  background: var(--cs-card);
+  border: 1px solid var(--cs-border);
+  border-radius: var(--cs-radius-lg);
+  backdrop-filter: blur(var(--cs-blur)) saturate(1.4);
+  -webkit-backdrop-filter: blur(var(--cs-blur)) saturate(1.4);
+  box-shadow: var(--cs-shadow-sm);
+  overflow: hidden;
+}
+.cs-panel-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--cs-border);
+}
+.cs-panel-head h3 { margin: 0; font-size: 14.5px; font-weight: 800; color: var(--cs-text); }
+.cs-panel-head .cs-panel-sub { font-size: 12px; color: var(--cs-muted); font-weight: 600; }
+.cs-panel-head .cs-panel-tools { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.cs-panel-body { padding: 16px 18px; }
+.cs-panel-body.tight { padding: 0; }
+
+/* ---------------- modal (CasaOS dialog) ---------------- */
+.cs-modal-backdrop {
+  position: fixed; inset: 0; z-index: 200;
+  background: var(--cs-scrim);
+  backdrop-filter: blur(6px);
+  display: none; align-items: center; justify-content: center; padding: 20px;
+}
+.cs-modal-backdrop.open { display: flex; animation: csFade .18s ease; }
+@keyframes csFade { from { opacity: 0; } to { opacity: 1; } }
+.cs-modal {
+  width: min(560px, 100%);
+  max-height: 86vh; overflow: auto;
+  background: var(--cs-card-solid);
+  border: 1px solid var(--cs-border);
+  border-radius: 22px;
+  box-shadow: 0 24px 60px rgba(0,0,0,.35);
+  animation: csUp .22s cubic-bezier(.2,.8,.2,1);
+}
+@keyframes csUp { from { opacity: 0; transform: translateY(14px) scale(.98); } to { opacity: 1; transform: none; } }
+.cs-modal-head { display: flex; align-items: center; gap: 10px; padding: 16px 20px; border-bottom: 1px solid var(--cs-border); }
+.cs-modal-head h3 { margin: 0; font-size: 16px; font-weight: 800; color: var(--cs-text); }
+.cs-modal-head .cs-modal-x { margin-left: auto; }
+.cs-modal-body { padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; }
+.cs-modal-foot { padding: 14px 20px; border-top: 1px solid var(--cs-border); display: flex; gap: 10px; justify-content: flex-end; }
+
+/* ---------------- toasts ---------------- */
+.cs-toasts { position: fixed; right: 16px; bottom: 16px; z-index: 300; display: flex; flex-direction: column; gap: 8px; }
+.cs-toast {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 15px; border-radius: var(--cs-radius);
+  background: var(--cs-card-solid); color: var(--cs-text);
+  border: 1px solid var(--cs-border); box-shadow: var(--cs-shadow);
+  font-size: 13.5px; font-weight: 600;
+  animation: csUp .2s ease;
+  max-width: 340px;
+}
+.cs-toast.ok { border-left: 3px solid var(--cs-green); }
+.cs-toast.err { border-left: 3px solid var(--cs-red); }
+.cs-toast.info { border-left: 3px solid var(--cs-accent); }
+
+/* ---------------- auth (login/register) ---------------- */
+.cs-auth-wrap {
+  position: relative; z-index: 1;
+  min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px;
+}
+/* auth/error pages live inside the CasaOS shell too (topbar + dock) */
+.cs-main-auth { padding: 0; display: flex; align-items: stretch; }
+.cs-main-auth .cs-auth-wrap { min-height: calc(100vh - var(--cs-topbar-h)); flex: 1; }
+
+.cs-auth {
+  width: min(420px, 100%);
+  background: var(--cs-card-strong);
+  backdrop-filter: blur(34px) saturate(1.5);
+  -webkit-backdrop-filter: blur(34px) saturate(1.5);
+  border: 1px solid var(--cs-border);
+  border-radius: 26px;
+  box-shadow: 0 24px 60px rgba(0,0,0,.3);
+  padding: 28px 26px 24px;
+  animation: csUp .28s cubic-bezier(.2,.8,.2,1);
+}
+.cs-auth-logo {
+  width: 58px; height: 58px; border-radius: 18px; margin: 0 auto 14px;
+  display: flex; align-items: center; justify-content: center; font-size: 28px;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--cs-accent) 90%, #fff 10%), color-mix(in srgb, var(--cs-accent) 65%, #000 20%));
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--cs-accent) 40%, transparent);
+}
+.cs-auth-logo img { width: 100%; height: 100%; object-fit: contain; border-radius: 18px; }
+.cs-auth h1 { font-size: 21px; font-weight: 800; color: var(--cs-text); text-align: center; margin: 0 0 4px; }
+.cs-auth .cs-auth-sub { text-align: center; color: var(--cs-muted); font-size: 13px; margin: 0 0 20px; font-weight: 500; }
+.cs-auth .cs-auth-alt { text-align: center; margin-top: 16px; font-size: 13px; color: var(--cs-muted); }
+.cs-auth .cs-auth-alt a { color: var(--cs-accent); font-weight: 700; text-decoration: none; }
+.cs-auth .field { margin-bottom: 12px; }
+.cs-auth .btn { width: 100%; justify-content: center; padding: 12px 16px; font-size: 14.5px; }
+
+/* ---------------- empty state ---------------- */
+.cs-empty {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 34px 20px; text-align: center; color: var(--cs-muted);
+}
+.cs-empty .cs-empty-ic {
+  width: 52px; height: 52px; border-radius: 18px; font-size: 24px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--cs-chip); border: 1px solid var(--cs-border);
+}
+.cs-empty b { color: var(--cs-text); font-size: 14.5px; }
+.cs-empty p { margin: 0; font-size: 13px; max-width: 380px; }
+
+/* ---------------- misc helpers ---------------- */
+.cs-grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--cs-gap); }
+.cs-grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--cs-gap); }
+.cs-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.cs-muted { color: var(--cs-muted); }
+.cs-strong { color: var(--cs-text); font-weight: 700; }
+.cs-mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
+.cs-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 700;
+  background: var(--cs-chip); border: 1px solid var(--cs-border); color: var(--cs-text-2);
+}
+.cs-pill.ok { color: var(--cs-green); border-color: color-mix(in srgb, var(--cs-green) 30%, transparent); background: color-mix(in srgb, var(--cs-green) 12%, transparent); }
+.cs-pill.warn { color: var(--cs-orange); border-color: color-mix(in srgb, var(--cs-orange) 30%, transparent); background: color-mix(in srgb, var(--cs-orange) 12%, transparent); }
+.cs-pill.err { color: var(--cs-red); border-color: color-mix(in srgb, var(--cs-red) 30%, transparent); background: color-mix(in srgb, var(--cs-red) 12%, transparent); }
+.cs-divider { height: 1px; background: var(--cs-border); margin: 6px 0; }
+
+/* storage widget floating bottom-left (CasaOS signature) */
+.cs-storage-chip {
+  position: fixed; left: calc(var(--cs-dock-w) + 14px); bottom: 14px; z-index: 55;
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 14px 8px 10px;
+  border-radius: 999px;
+  background: var(--cs-card-strong);
+  backdrop-filter: blur(var(--cs-blur));
+  border: 1px solid var(--cs-border);
+  box-shadow: var(--cs-shadow);
+  font-size: 12px; font-weight: 700; color: var(--cs-text-2);
+  text-decoration: none;
+}
+.cs-storage-chip .cs-meter { width: 54px; }
+.cs-storage-chip:hover { transform: translateY(-1px); }
+
+/* ============================================================================
+   Responsive
+   ============================================================================ */
+@media (max-width: 1000px) {
+  .cs-widgets .cs-widget.hide-md { display: none; }
+}
+@media (max-width: 760px) {
+  :root { --cs-dock-w: 0px; --cs-topbar-h: 54px; --cs-gap: 14px; }
+  .cs-shell { grid-template-columns: minmax(0, 1fr); grid-template-areas: "topbar" "main"; }
+  .cs-dock {
+    position: fixed; left: 0; top: var(--cs-topbar-h); bottom: 0; height: auto;
+    width: 68px; transform: translateX(-100%); transition: transform .22s ease;
+    background: var(--cs-card-strong); z-index: 80;
+  }
+  body.cs-dock-open .cs-dock { transform: none; }
+  .cs-dock-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 79; display: none; }
+  body.cs-dock-open .cs-dock-backdrop { display: block; }
+  .cs-widgets { display: none; }
+  .cs-clock { display: none; }
+  .cs-topbar .cs-crumb { display: none; }
+  .cs-storage-chip { left: 14px; }
+  .cs-app-grid { grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); }
+  .cs-main { padding: 14px 12px 90px; }
+  .cs-menu { right: 8px; }
+}
+@media (max-width: 420px) {
+  .cs-avatar .cs-av-meta { display: none; }
+  .cs-app-grid { grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); }
+}
+
+@media print {
+  .cs-topbar, .cs-dock, .cs-storage-chip { display: none !important; }
+}
+
+/* ---------------- topbar extras (brand, navbar links, avatar, widgets) ---------------- */
+.cs-topbar .cs-brand-name { max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cs-topbar .icon-btn {
+  width: 34px; height: 34px; padding: 0; flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 10px; background: var(--cs-chip); border: 1px solid var(--cs-border);
+  color: var(--cs-text-2); cursor: pointer;
+}
+.cs-topbar .icon-btn:hover { background: var(--cs-hover); color: var(--cs-text); }
+.cs-topbar .icon-btn .ic { width: 17px; height: 17px; }
+.cs-dock-toggle { display: none; }
+
+.cs-topnav { display: flex; align-items: center; gap: 4px; margin-left: 6px; }
+.cs-topnav a {
+  padding: 6px 11px; border-radius: 999px;
+  color: var(--cs-muted); font-size: 13px; font-weight: 650; text-decoration: none;
+  border: 1px solid transparent; white-space: nowrap;
+}
+.cs-topnav a:hover { color: var(--cs-text); background: var(--cs-hover); border-color: var(--cs-border); }
+
+.cs-avatar { border: 1px solid var(--cs-border); background: var(--cs-chip); padding: 4px 10px 4px 4px; }
+.cs-avatar .cs-av-meta { display: flex; flex-direction: column; line-height: 1.15; text-align: left; }
+.cs-avatar-fallback {
+  width: 28px; height: 28px; border-radius: 50%; flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 800; color: #fff;
+  background: linear-gradient(135deg, var(--cs-accent), color-mix(in srgb, var(--cs-accent) 45%, #7b5cff));
+}
+.cs-avatar-fallback.lg { width: 34px; height: 34px; font-size: 13px; }
+.cs-menu .cs-menu-head .cs-avatar-fallback { flex: 0 0 auto; }
+.cs-widget .cs-w-ic { flex: 0 0 auto; }
+.cs-topbar .btn-sm { white-space: nowrap; }
+
+@media (max-width: 1180px) {
+  .cs-w-temp { display: none !important; }
+  .cs-topbar .cs-brand-name { max-width: 120px; }
+}
+@media (max-width: 900px) {
+  .cs-dock-toggle { display: inline-flex; }
+  .cs-topnav { display: none; }
+  .cs-widgets .cs-widget:not(#csCpu):not(#csDisk) { display: none !important; }
+  .cs-clock { display: none; }
+  .cs-avatar .cs-av-meta { display: none; }
+  .cs-avatar { padding: 4px; }
+}

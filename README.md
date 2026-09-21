@@ -2,6 +2,23 @@
 
 Full Node.js web panel — card-based dark UI with user dashboard, admin dashboard, user/team management, CMS content pages, analytics, 2FA, email auth flows and fully customisable settings.
 
+## PHP Edition (CasaOS UI) — `php/`
+
+The whole panel is also available as a **dependency-free PHP 8 port** (plain PHP + SQLite, no
+Composer, no build step) with a **CasaOS-style desktop shell** on every page: glass topbar with
+live CPU/RAM/disk/net/temp widgets, icon dock, wallpaper background and an app-grid home.
+It is a 1:1 port — 175 routes, 70 views, 26 tables, the same 13,653-entry command dataset and the
+full Cloudflare / plans / blog / CMS feature set. The Node app above is untouched.
+
+```bash
+cd php
+php cli/setup.php     # create + seed SQLite DB (admin/admin123, demo/demo123)
+bash serve.sh         # php -S 0.0.0.0:8080 router.php
+```
+
+Apache: document root → `php/` (`.htaccess` included). nginx: `try_files $uri $uri/ /index.php`.
+Full docs: [`php/README.md`](php/README.md).
+
 ## Ports
 
 | Service | Port | URL |
@@ -96,4 +113,4 @@ views/               EJS (user + admin + auth + errors)
 public/              css, js, uploads
 ```
 
-> Default admin: `admin` / `admin123` — change it after first login!
+> Default admin: `admin` / `admin123` — change it after first login! (Same defaults in the PHP edition.)

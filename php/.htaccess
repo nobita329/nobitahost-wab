@@ -1,0 +1,30 @@
+# NobitaHost · PHP edition (Apache)
+Options -Indexes
+DirectoryIndex index.php
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # protect internals
+  RewriteRule ^(app|data|cli|views|routes)(/|$) - [F,L]
+  RewriteRule ^storage/cache(/|$) - [F,L]
+
+  # real files / directories are served directly
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # everything else → front controller
+  RewriteRule ^ index.php [L]
+</IfModule>
+
+<IfModule mod_headers.c>
+  <FilesMatch "\.(css|js|svg|png|jpg|jpeg|webp|gif|woff2?)$">
+    Header set Cache-Control "public, max-age=604800"
+  </FilesMatch>
+</IfModule>
+
+<FilesMatch "\.(db|sqlite|env|log)$">
+  Require all denied
+</FilesMatch>

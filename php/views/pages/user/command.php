@@ -1,0 +1,64 @@
+<?php
+/**
+ * Ported from views/pages/user/command.ejs (EJS → PHP) by php/tools/ejs2php.mjs.
+ * Layout + shell come from views/layouts/app.php (CasaOS UI).
+ */
+?>
+<?php /* EJS2PHP: layout include 'partials/head' handled by the PHP layout */ ?>
+
+
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-head"><h2><svg class="ic"><use href="#i-terminal"/></svg> Command Center</h2></div>
+      <div class="card-body content-area"><?= $page->content ?></div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-head">
+        <h2><svg class="ic"><use href="#i-terminal"/></svg> Command Library <span class="badge gold" id="cmdTotal">10,000+</span></h2>
+        <div class="cmd-search">
+          <svg class="ic"><use href="#i-search"/></svg>
+          <input id="cmdSearch" placeholder="Search commands… (e.g. docker, nginx, chmod)" autocomplete="off">
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="cmd-tabs" id="cmdTabs"></div>
+        <div class="cmd-list" id="cmdList"></div>
+        <div class="cmd-load" id="cmdLoadWrap" style="display:none">
+          <button class="btn btn-ghost" id="cmdLoad">Load more commands</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-head"><h2><svg class="ic"><use href="#i-file"/></svg> Quick Terminal</h2></div>
+      <div class="card-body">
+        <div class="terminal">
+          <div class="term-bar"><span></span><span></span><span></span><b>nobita@host:~</b></div>
+          <div class="term-body" id="termBody">
+            <p><span class="t-prompt">nobita@host:~$</span> <span id="termInput"></span><span class="t-cursor">▍</span></p>
+            <p class="t-out" id="termOut">Type a command below and press run.</p>
+          </div>
+          <div class="term-actions">
+            <input id="termCmd" placeholder="e.g. npm run build" autocomplete="off">
+            <button class="btn btn-accent btn-sm" id="termRun">Run</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>window.__CMD_DATA = <?= $cmdData ?>;</script>
+<script src="/js/commands.js"></script>
+<?php /* EJS2PHP: layout include 'partials/footer' handled by the PHP layout */ ?>
+
