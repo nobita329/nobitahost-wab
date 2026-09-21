@@ -1,0 +1,63 @@
+<?php
+/**
+ * Ported from views/pages/plans/categories.ejs (EJS → PHP) by php/tools/ejs2php.mjs.
+ * Layout + shell come from views/layouts/app.php (CasaOS UI).
+ */
+?>
+<?php /* EJS2PHP: layout include 'partials/head' handled by the PHP layout */ ?>
+
+
+<?php if ($query && $query->saved) { ?><div class="alert alert-success">Category saved.</div><?php } ?>
+<?php if ($query && $query->deleted) { ?><div class="alert alert-success">Category deleted.</div><?php } ?>
+<?php if ($query && $query->error) { ?><div class="alert alert-error"><?= e($query->error) ?></div><?php } ?>
+
+<div class="row">
+  <div class="col-5">
+    <div class="card">
+      <div class="card-head"><h2><svg class="ic"><use href="#i-plus"/></svg> <?= e($editing ? 'Edit Category' : 'Add Category') ?></h2></div>
+      <div class="card-body">
+        <form method="POST" action="<?= e($editing ? '/plans/categories/' . $editing->id . '/edit' : '/plans/categories/add') ?>" class="form">
+          <div class="field"><label>Name *</label><input type="text" name="name" value="<?= e($editing ? $editing->name : '') ?>" required placeholder="e.g. Basic, Premium"></div>
+          <div class="field"><label>Description</label><input type="text" name="description" value="<?= e($editing ? $editing->description : '') ?>" placeholder="Short description"></div>
+          <div class="field"><label>Sort Order</label><input type="number" name="sort_order" value="<?= e($editing ? $editing->sort_order : '0') ?>"></div>
+          <button class="btn btn-accent" type="submit"><?= e($editing ? 'Save Changes' : 'Add Category') ?></button>
+          <?php if ($editing) { ?><a class="btn btn-ghost" href="/plans/categories">Cancel</a><?php } ?>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="col-7">
+    <div class="card table-card">
+      <div class="card-head"><h2><svg class="ic"><use href="#i-folder"/></svg> All Categories</h2></div>
+      <div class="card-body">
+        <table>
+          <thead><tr><th>Name</th><th>Description</th><th>Plans</th><th>Order</th><th class="ta-r">Actions</th></tr></thead>
+          <tbody>
+            <?php foreach ($categories as $c) { ?>
+            <tr>
+              <td><b><?= e($c->name) ?></b></td>
+              <td><small style="color:var(--muted)"><?= e($c->description ?: '-') ?></small></td>
+              <td><span class="badge"><?= e($c->plan_count ?: 0) ?></span></td>
+              <td><?= e($c->sort_order) ?></td>
+              <td class="ta-r">
+                <div class="row-actions">
+                  <a class="icon-btn" href="/plans/categories?edit=<?= e($c->id) ?>" title="Edit"><svg class="ic"><use href="#i-pencil"/></svg></a>
+                  <form method="POST" action="/plans/categories/<?= e($c->id) ?>/delete" onsubmit="return confirm('Delete this category?')" class="inline">
+                    <button class="icon-btn danger" type="submit" title="Delete"><svg class="ic"><use href="#i-trash"/></svg></button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            <?php } ?>
+            <?php if (!nh_count($categories)) { ?>
+            <tr><td colspan="5" class="empty">No categories yet. Create one above.</td></tr>
+            <?php } ?>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<?php /* EJS2PHP: layout include 'partials/footer' handled by the PHP layout */ ?>
+

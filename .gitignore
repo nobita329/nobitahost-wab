@@ -6,3 +6,12 @@ public/uploads/*
 !public/uploads/.gitkeep
 npm-debug.log*
 .DS_Store
+
+# ---- PHP edition ----
+php/data/*.db
+php/data/*.db-*
+php/storage/uploads/*
+!php/storage/uploads/.gitkeep
+php/storage/cache/*
+!php/storage/cache/.gitkeep
+php-runtime/

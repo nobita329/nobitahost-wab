@@ -8,7 +8,10 @@
     "api": "node src/api.js",
     "dev": "node --watch src/server.js",
     "build": "node scripts/build.js",
-    "createuser": "node scripts/createuser.js"
+    "createuser": "node scripts/createuser.js",
+    "php:setup": "cd php && (php cli/setup.php || ../php-runtime/node_modules/.bin/php-wasm-cli cli/setup.php)",
+    "php:dev": "bash php/serve.sh",
+    "php:lint": "for f in $(find php -name \"*.php\"); do php -l $f || exit 1; done"
   },
   "keywords": [
     "panel",
